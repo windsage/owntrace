@@ -1,0 +1,48 @@
+android_app {
+    name: "Fanstrace",
+    platform_apis: true,
+    system_ext_specific: true,
+    certificate: "platform",
+    required: ["start_fanstrace.sh","stop_fanstrace.sh","start_dfx_fanstrace.sh","stop_dfx_fanstrace.sh"],
+    optimize: {
+        proguard_flags_files: ["proguard.flags"],
+    },
+    static_libs: [
+        "androidx.leanback_leanback",
+        "androidx.leanback_leanback-preference",
+        "androidx.appcompat_appcompat",
+        "androidx.preference_preference",
+        "androidx.recyclerview_recyclerview",
+    ],
+    resource_dirs: ["res"],
+    srcs: ["src/**/*.java"],
+    init_rc: ["fanstrace.rc"],
+    defaults: [
+        "SettingsLibDefaults",
+    ],
+}
+
+sh_binary {
+    name: "start_fanstrace.sh",
+    system_ext_specific: true,
+    src: "start_fanstrace.sh",
+}
+
+sh_binary {
+    name: "stop_fanstrace.sh",
+    system_ext_specific: true,
+    src: "stop_fanstrace.sh",
+}
+
+sh_binary {
+    name: "start_dfx_fanstrace.sh",
+    system_ext_specific: true,
+    src: "start_dfx_fanstrace.sh",
+}
+
+sh_binary {
+    name: "stop_dfx_fanstrace.sh",
+    system_ext_specific: true,
+    src: "stop_dfx_fanstrace.sh",
+}
+

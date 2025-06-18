@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2015 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License
+  -->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:androidprv="http://schemas.android.com/apk/prv/res/android"
+          package="com.android.fanstrace"
+          android:versionCode="2"
+          android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="29"/>
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Used for adding the Quick Settings tile to the status bar. -->
+    <uses-permission android:name="android.permission.STATUS_BAR" />
+
+    <!-- Used for brief periods where the trace service is foregrounded. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+
+    <application android:label="@string/system_tracing"
+                 android:banner="@drawable/banner">
+        <uses-library android:name="androidx.window.extensions" android:required="false"/>
+        <uses-library android:name="androidx.window.sidecar" android:required="false"/>
+
+        <activity android:name=".MainActivity"
+                  android:description="@string/record_system_activity"
+                  android:label="@string/system_tracing"
+                  android:theme="@style/Theme.Settings"
+                  android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.INFO"/>
+            </intent-filter>
+
+            <!-- Mark this activity as a dynamic setting in the development category. -->
+            <meta-data android:name="com.android.settings.category"
+              android:value="com.android.settings.category.ia.development" />
+            <meta-data android:name="com.android.settings.summary" android:resource="@string/record_system_activity" />
+            <meta-data android:name="com.android.settings.order" android:value="10" />
+            <meta-data android:name="com.android.settings.profile" android:value="primary_profile_only" />
+        </activity>
+
+        <receiver android:name=".Receiver"
+                  android:permission="android.permission.DUMP"
+                  androidprv:systemUserOnly="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SECRET_CODE" />
+                <data
+                    android:host="54321"
+                    android:scheme="android_secret_code" />
+                <data
+                    android:host="67890"
+                    android:scheme="android_secret_code" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name=".StopTraceService"
+            android:exported="true" />
+
+        <service android:name=".StartTraceService"
+            android:exported="true" />
+
+        <service android:name=".StopDfxTraceService"
+            android:exported="true" />
+
+        <service android:name=".StartDfxTraceService"
+            android:exported="true" />
+
+        <service android:name=".TraceService"
+            android:exported="false" />
+    </application>
+</manifest>

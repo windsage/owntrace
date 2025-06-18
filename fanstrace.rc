@@ -1,0 +1,95 @@
+## To allow communication with Traceur that a trace has ended.
+on early-boot
+    mkdir /data/local/traces/fans 0777 shell shell
+    mkdir /data/local/traces/DFX 0777 shell shell
+
+#SDD:fix for fanstrace for V by chao.xu5 at 20241210 start
+service start_fanstrace /system_ext/bin/start_fanstrace.sh
+    class main
+    user shell
+    group shell
+    oneshot
+    disabled
+
+on property:sys.trace.fans_trace=start
+    start start_fanstrace
+
+service stop_fanstrace /system_ext/bin/stop_fanstrace.sh
+    class main
+    user shell
+    group shell
+    oneshot
+    disabled
+
+on property:sys.trace.fans_trace=dump
+    start stop_fanstrace
+
+service start_dfx_fanstrace /system_ext/bin/start_dfx_fanstrace.sh
+    class main
+    user shell
+    group shell
+    oneshot
+    disabled
+
+on property:sys.trace.dfx_trace=start
+    start start_dfx_fanstrace
+
+service stop_dfx_fanstrace /system_ext/bin/stop_dfx_fanstrace.sh
+    class main
+    user shell
+    group shell
+    oneshot
+    disabled
+
+on property:sys.trace.dfx_trace=dump
+    start stop_dfx_fanstrace
+#SDD:fix for fanstrace for V by chao.xu5 at 20241210 end
+
+on property:ro.tran_fanstrace_support=1
+    setprop debug.hwui.memory_dump_disable true
+#SPD: add by fan.feng1 for switch cpu_mode at 20220902 start
+on property:persist.sys.trace.cpu_mode=*
+   setprop persist.vendor.powerhal.lmode ${persist.sys.trace.cpu_mode}
+#SPD: add by fan.feng1 for switch cpu_mode at 20220902 end
+
+
+#SPD: modify permissions by chao.xu5 at Mar 5, 2025 start
+on property:sys.boot_completed=1
+    mkdir /sys/kernel/tracing/instances/fans
+# Change fans instances nodes write and read permissions
+    chmod 0222 /sys/kernel/tracing/instances/fans/trace_marker
+    chmod 0666 /sys/kernel/tracing/instances/fans/buffer_percent
+    chmod 0666 /sys/kernel/tracing/instances/fans/buffer_size_kb
+    chmod 0666 /sys/kernel/tracing/instances/fans/set_event
+    chmod 0666 /sys/kernel/tracing/instances/fans/tracing_on
+    chmod 0666 /sys/kernel/tracing/instances/fans/trace_clock
+    chmod 0666 /sys/kernel/tracing/instances/fans/trace
+# Write default value into nodes
+    write /sys/kernel/tracing/instances/fans/tracing_on 0
+    write /sys/kernel/tracing/instances/fans/trace_clock "boot"
+#Origin ftrace events
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/power/gpu_frequency/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/sched/sched_switch/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/sched/sched_waking/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/power/cpu_frequency/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/sched/sched_blocked_reason/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/block/block_rq_insert/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/block/block_rq_issue/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/block/block_rq_complete/enable
+# Origin events for atrace categories
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/vmscan/mm_vmscan_direct_reclaim_begin/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/vmscan/mm_vmscan_direct_reclaim_end/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/vmscan/mm_vmscan_kswapd_wake/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/vmscan/mm_vmscan_kswapd_sleep/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/lowmemorykiller/lowmemorykiller/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/binder_transaction/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/binder_transaction_received/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/binder_transaction_alloc_buf/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/binder_set_priority/enable
+# Custom ftrace events
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/trans_sched/tracing_mark_write/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/trans_sched/dump_info/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/trans_mem/alter_rwsem_list_add/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/trans_mem/rwsem_owner/enable
+    chmod 0666 /sys/kernel/tracing/instances/fans/events/scheduler/sched_frequency_limits/enable
+#SPD: modify permissions by chao.xu5 at Mar 5, 2025 end

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <!-- This is the user visible name of the app and title. The purpose of the app is to allow the user to take a "Trace" of the activity on their system, recording it for later review. Here's a description of the process, but we'd like to refer to it using the general term "tracing": https://developer.android.com/studio/command-line/systrace.html -->
+    <string name="system_tracing">Пайгирӣ кардани мухлисон</string>
+
+    <!-- This string is a description of what "System Tracing" is. It is used as a subtitle or summary text to describe this System Tracing app. -->
+    <string name="record_system_activity">Фаъолияти системаро сабт кунед ва онро дертар таҳлил кунед то иҷроишро такмил ёбад</string>
+
+    <!-- This is the label for a toggle button. When the toggle is enabled, we will begin recording a "Trace" of activity on the user's phone. This is also used as a Quick Settings tile label. -->
+    <string name="record_trace">Сабткунии пай</string>
+
+    <!-- This is the label for a toggle that will let the user choose whether to trace debuggable applications in the trace they are collecting. -->
+    <string name="trace_debuggable_applications">Барномаҳои ислоҳшавандаро пайгирӣ кунед</string>
+
+    <!-- This is the title for a list of trace categories. The user will be able to select as many categories as they want to from this list (that list will not be translated). Categories are explained here: https://developer.android.com/studio/command-line/systrace.html -->
+    <string name="categories">Категорияҳо</string>
+    <!-- When the user taps this button, the default list of categories to trace will be restored. -->
+    <string name="restore_default_categories">Категорияҳо аз рӯи муқаррарот барқарор шуданд</string>
+    <!-- This is the label for a toast that appears when the user taps the "Restore default categories" button.-->
+    <string name="default_categories_restored">Категорияҳо аз рӯи муқаррарот барқарор шуданд</string>
+    <!-- This is the subtitle for when the default categories are selected. -->
+    <string name="default_categories">Пешфарз</string>
+    <!-- This is the subtitle to show the number of categories that are selected. -->
+    <plurals name="num_categories_selected">
+        <item quantity="zero">%d интихоб шуд</item>
+        <item quantity="one">%d интихоб шуд</item>
+        <item quantity="two">%d интихоб шуд</item>
+        <item quantity="few">%d интихоб шуд</item>
+        <item quantity="many">%d интихоб шуд</item>
+        <item quantity="other">%d интихоб шуд</item>
+    </plurals>
+
+    <!-- This is the label for a list of applications on the device that the user can add to their trace. The user will be able to select one or more applications from this list (that list will not be translated). -->
+    <string name="applications">Барномаҳо</string>
+    <!-- This is an optional subtitle under the Applications label, indicating that there are no applications available to be traced because the device doesn't have any applications in debug mode. -->
+    <string name="no_debuggable_apps">Ягон барномаҳои ислоҳшаванда дастрас нестанд</string>
+
+    <!-- This is the label for a picker that will let the user select the buffer size to use for their trace. -->
+    <string name="buffer_size">Андозаи буфери ҳар CPU</string>
+    <!-- This setting is the label for a toggle button. When enabled, a Quick Settings tile will be available in the Quick Settings bar (available when you swipe down from the top of the screen). -->
+    <string name="show_quick_settings_tile">Нишон додани қисми Танзимоти зуд</string>
+
+    <!-- This is the title for a notification that appears while a trace is being saved. -->
+    <string name="saving_trace">Захирашавии нишонаҳо</string>
+    <!-- This is the title for a notification that appears after a trace was saved. -->
+    <string name="trace_saved">Пайгирӣ захира шуд</string>
+    <!-- This is the subtitle for a notification that appears after a trace was saved. Tapping it will open the 'share sheet' that will appear at the bottom of the screen and will allow the user to share the trace, for example to email. -->
+    <string name="tap_to_share">Барои интиқоли пайвандатон пахш кунед</string>
+
+    <!-- This is a message prompting the user to stop tracing. -->
+    <string name="stop_tracing">Қатъи пайгири</string>
+
+    <!-- This is the title for a notification that appears when a trace begins but for some reason a desired tracing category is not available. This ends in a colon because the subtitle for this notification is a list of the unavailable tracing categories. That list could contain one or more categories. (This should rarely happen) -->
+    <string name="tracing_categories_unavailable">Баъзе категорияҳои пайгирӣ дастнорасанд:</string>
+
+    <!-- This is the title for a notification that appears while a trace is being recorded. -->
+    <string name="trace_is_being_recorded">Пайгирӣ сабт шуда истодааст</string>
+    <!-- This is the subtitle for a notification that appears while a trace is being recorded. Tapping the notification will stop the recording. -->
+    <string name="tap_to_stop_tracing">Барои манъи пайвандкунӣ пахш кунед</string>
+
+    <!-- This is the label for a button that will clear all of the saved traces, removing them all from the directory they are saved to. There will be a confirmation dialog after this button is tapped, but clearing the traces after confirming is not reversible. -->
+    <string name="clear_saved_traces">Нишонаҳои захирашударо тоза кунед</string>
+    <string name="clear_saved_traces_summary">Пайгиримоҳо баъди як моҳ тоза карда мешаванд</string>
+
+    <!-- This is the title for a confirmation dialog asking the user to confirm that they want to clear, or delete, all of the traces t hey have saved. -->
+    <string name="clear_saved_traces_question">Нишонаҳои захирашударо тоза кунем?</string>
+    <!-- This is the confirmation dialog for deleting all of the saved traces. Don't translate "/data/local/traces/fans". After confirming, this decision is not reversible. -->
+    <string name="all_traces_will_be_deleted">Ҳама радёбиҳо аз /data/local/traces/fans нест карда мешаванд</string>
+    <!-- This is the confirmation button indicating that the user does want to clear, or delete, all of the saved traces from their device. -->
+    <string name="clear">Тоза кардан</string>
+
+    <!-- This is the title for the directory holding the system traces. The user sees this when using a directory browsing app like the Files app. -->
+    <string name="system_traces_storage_title">Пайгирии мухлисон</string>
+
+    <!-- These are keywords that the user can use to search for this app. 'systrace' should not be translated, as it is an app name. -->
+    <string name="keywords">пайгириҳои система, пайгирӣ, кор</string>
+
+    <!-- Title of a dialog asking the user to confirm whether they want to share the trace. -->
+    <string name="share_trace">Мехоҳед пайгириро мубодила кунед?</string>
+
+    <!-- Text informing user about contents of a trace file. This string appears when users share a trace file or reveal the System Traces directory in a directory browsing app like Files. -->
+    <string name="system_trace_sensitive_data">Файлҳои пайгирии мухлисон метавонанд маълумоти ҳассос система ва барномаро дохил кунанд (монанди истифодаи барнома). Танҳо пайҳои системаро бо одамон ва барномаҳое, ки ба шумо боварӣ доред, мубодила кунед.</string>
+
+    <!-- Button on a dialog asking the user to confirm whether they want to share the trace. Clicking this button confirms that the user does want to share the trace. -->
+    <string name="share">Мубодила кардан</string>
+
+    <!-- Checkbox that indicates this dialog should not be shown again when the next trace is taken. -->
+    <string name="dont_show_again">Дигар нишон надиҳед</string>
+    <!-- Checkbox that indicates that we should use Perfetto to take traces. This feature is in beta. -->
+    <string name="use_perfetto_beta">Истифода Perfetto (бета)</string>
+
+    <string name="long_traces">Пайгири тӯлонӣ</string>
+    <string name="long_traces_summary">Пайваста дар захирагоҳи дастгоҳ захира шуда</string>
+    <string name="max_long_trace_size">Дарозии максималии андозаи пай</string>
+    <string name="max_long_trace_duration">Дарозии максималии давомнокии пай</string>
+
+    <!-- Choice for the user to select a maximum trace size. -->
+    <string name="two_hundred_mb">200 MБ</string>
+    <!-- Choice for the user to select a maximum trace size. -->
+    <string name="one_gb">1 ГБ</string>
+    <!-- Choice for the user to select a maximum trace size. -->
+    <string name="five_gb">5 ГБ</string>
+    <!-- Choice for the user to select a maximum trace size. -->
+    <string name="ten_gb">10 ГБ</string>
+    <!-- Choice for the user to select a maximum trace size. -->
+    <string name="twenty_gb">20 ГБ</string>
+    <!-- Choice for the user to select a maximum trace time. -->
+    <string name="ten_minutes">10 дақиқа</string>
+    <!-- Choice for the user to select a maximum trace time. -->
+    <string name="thirty_minutes">30 дақиқа</string>
+    <!-- Choice for the user to select a maximum trace time. -->
+    <string name="one_hour">1 соат</string>
+    <!-- Choice for the user to select a maximum trace time. -->
+    <string name="eight_hours">8 соат</string>
+    <!-- Choice for the user to select a maximum trace time. -->
+    <string name="twelve_hours">12 Соат</string>
+    <!-- Choice for the user to select a maximum trace time. -->
+    <string name="twentyfour_hours">24 соат</string>
+    <!-- Choice for the user to select a maximum trace buffer size. -->
+    <string name="four_thousand_kb">4096 KБ</string>
+    <!-- Choice for the user to select a maximum trace buffer size. -->
+    <string name="eight_thousand_kb">8192 KБ</string>
+    <!-- Choice for the user to select a maximum trace buffer size. -->
+    <string name="sixteen_thousand_kb">16384 КБ</string>
+    <!-- Choice for the user to select a maximum trace buffer size. -->
+    <string name="twentyfour_thousand_kb">24576 КБ</string>
+    <!-- Choice for the user to select a maximum trace buffer size. -->
+    <string name="thirtytwo_thousand_kb">32768 KБ</string>
+    <!-- Choice for the user to select a maximum trace buffer size. -->
+    <string name="sixtyfive_thousand_kb">65536 KБ</string>
+
+    <!-- This is the label for a picker that will let the user select the cpu mode. -->
+    <string name="perf_cpu_mode">Perf_CPU Реҷа</string>
+    <!-- Choice for the user to select cpu mode. -->
+    <string name="performance_mode">самаранокӣ</string>
+    <string name="equalization_mode_1">balance_1</string>
+    <string name="equalization_mode_2">balance_2</string>
+    <string name="equalization_mode_3">balance_3</string>
+    <string name="equalization_mode_4">balance_4</string>
+    <string name="equalization_mode_5">balance_5</string>
+
+
+</resources>

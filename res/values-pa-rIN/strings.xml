@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- This is the user visible name of the app and title. The purpose of the app is to allow the user to take a "Trace" of the activity on their system, recording it for later review. Here's a description of the process, but we'd like to refer to it using the general term "tracing": https://developer.android.com/studio/command-line/systrace.html -->
+  <string name="system_tracing">ਪ੍ਰਸ਼ੰਸਕਾਂ ਦਾ ਪਤਾ ਲਗਾਉਣਾ</string>
+  <!-- This string is a description of what "System Tracing" is. It is used as a subtitle or summary text to describe this System Tracing app. -->
+  <string name="record_system_activity">ਸਿਸਟਮ ਗਤੀਵਿਧੀ ਨੂੰ ਰਿਕਾਰਡ ਕਰੋ ਅਤੇ ਪ੍ਰਦਰਸ਼ਨ ਨੂੰ ਬਿਹਤਰ ਬਣਾਉਣ ਲਈ ਬਾਅਦ ਵਿੱਚ ਇਸਦਾ ਵਿਸ਼ਲੇਸ਼ਣ ਕਰੋ</string>
+  <!-- This is the label for a toggle button. When the toggle is enabled, we will begin recording a "Trace" of activity on the user's phone. This is also used as a Quick Settings tile label. -->
+  <string name="record_trace">ਟ੍ਰੇਸ ਨੂੰ ਰਿਕਾਰਡ ਕਰੋ</string>
+  <!-- This is the label for a toggle that will let the user choose whether to trace debuggable applications in the trace they are collecting. -->
+  <string name="trace_debuggable_applications">ਡੀਬਗੇਬਲ ਐਪਲੀਕੇਸ਼ਨਾਂ ਨੂੰ ਟ੍ਰੇਸ ਕਰੋ</string>
+  <!-- This is the title for a list of trace categories. The user will be able to select as many categories as they want to from this list (that list will not be translated). Categories are explained here: https://developer.android.com/studio/command-line/systrace.html -->
+  <string name="categories">ਸ਼੍ਰੇਣੀਆਂ</string>
+  <!-- When the user taps this button, the default list of categories to trace will be restored. -->
+  <string name="restore_default_categories">ਡਿਫਾਲਟ ਸ਼੍ਰੇਣੀਆਂ ਨੂੰ ਮੁੜ-ਬਹਾਲ ਕਰੋ</string>
+  <!-- This is the label for a toast that appears when the user taps the "Restore default categories" button.-->
+  <string name="default_categories_restored">ਡਿਫਾਲਟ ਸ਼੍ਰੇਣੀਆਂ ਮੁੜ-ਬਹਾਲ ਕੀਤੀਆਂ ਗਈਆਂ</string>
+  <!-- This is the subtitle for when the default categories are selected. -->
+  <string name="default_categories">ਡਿਫਾਲਟ</string>
+  <!-- This is the subtitle to show the number of categories that are selected. -->
+  <plurals name="num_categories_selected">
+    <item quantity="zero">%d ਨੂੰ ਚੁਣਿਆ ਗਿਆ</item>
+    <item quantity="one">%d ਨੂੰ ਚੁਣਿਆ ਗਿਆ</item>
+    <item quantity="two">%d ਨੂੰ ਚੁਣਿਆ ਗਿਆ</item>
+    <item quantity="few">%d ਨੂੰ ਚੁਣਿਆ ਗਿਆ</item>
+    <item quantity="many">%d ਨੂੰ ਚੁਣਿਆ ਗਿਆ</item>
+    <item quantity="other">%d ਨੂੰ ਚੁਣਿਆ ਗਿਆ</item>
+  </plurals>
+  <!-- This is the label for a list of applications on the device that the user can add to their trace. The user will be able to select one or more applications from this list (that list will not be translated). -->
+  <string name="applications">ਐਪਲੀਕੇਸ਼ਨਾਂ</string>
+  <!-- This is an optional subtitle under the Applications label, indicating that there are no applications available to be traced because the device doesn't have any applications in debug mode. -->
+  <string name="no_debuggable_apps">ਕੋਈ ਡਿਬਗੇਬਲ ਐਪਲੀਕੇਸ਼ਨ ਉਪਲਬਧ ਨਹੀਂ ਹਨ</string>
+  <!-- This is the label for a picker that will let the user select the buffer size to use for their trace. -->
+  <string name="buffer_size">ਪ੍ਰਤੀ-CPU ਬਫਰ ਆਕਾਰ</string>
+  <!-- This setting is the label for a toggle button. When enabled, a Quick Settings tile will be available in the Quick Settings bar (available when you swipe down from the top of the screen). -->
+  <string name="show_quick_settings_tile">ਤਤਕਾਲ ਸੈੱਟਿੰਗਜ਼ ਟਾਈਲ ਦਿਖਾਓ</string>
+  <!-- This is the title for a notification that appears while a trace is being saved. -->
+  <string name="saving_trace">ਟ੍ਰੇਸ ਨੂੰ ਸੰਭਾਲਣਾ</string>
+  <!-- This is the title for a notification that appears after a trace was saved. -->
+  <string name="trace_saved">ਟ੍ਰੇਸ ਨੂੰ ਸੰਭਾਲ ਲਿਆ ਗਿਆ</string>
+  <!-- This is the subtitle for a notification that appears after a trace was saved. Tapping it will open the 'share sheet' that will appear at the bottom of the screen and will allow the user to share the trace, for example to email. -->
+  <string name="tap_to_share">ਆਪਣਾ ਟ੍ਰੇਸ ਸਾਂਝਾ ਕਰਨ ਲਈ ਟੈਪ ਕਰੋ</string>
+  <!-- This is a message prompting the user to stop tracing. -->
+  <string name="stop_tracing">ਟ੍ਰੇਸਿੰਗ ਬੰਦ ਕਰੋ</string>
+  <!-- This is the title for a notification that appears when a trace begins but for some reason a desired tracing category is not available. This ends in a colon because the subtitle for this notification is a list of the unavailable tracing categories. That list could contain one or more categories. (This should rarely happen) -->
+  <string name="tracing_categories_unavailable">ਕੁਝ ਟ੍ਰੇਸਿੰਗ ਸ਼੍ਰੇਣੀਆਂ ਉਪਲਬਧ ਨਹੀਂ ਹਨ:</string>
+  <!-- This is the title for a notification that appears while a trace is being recorded. -->
+  <string name="trace_is_being_recorded">ਟ੍ਰੇਸ ਨੂੰ ਰਿਕਾਰਡ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ</string>
+  <!-- This is the subtitle for a notification that appears while a trace is being recorded. Tapping the notification will stop the recording. -->
+  <string name="tap_to_stop_tracing">ਟ੍ਰੇਸਿੰਗ ਨੂੰ ਰੋਕਣ ਲਈ ਟੈਪ ਕਰੋ</string>
+  <!-- This is the label for a button that will clear all of the saved traces, removing them all from the directory they are saved to. There will be a confirmation dialog after this button is tapped, but clearing the traces after confirming is not reversible. -->
+  <string name="clear_saved_traces">ਸੰਭਾਲੇ ਗਏ ਟ੍ਰੇਸ ਸਾਫ਼ ਕਰੋ</string>
+  <string name="clear_saved_traces_summary">ਟ੍ਰੇਸਾਂ ਨੂੰ ਇੱਕ ਮਹੀਨੇ ਬਾਅਦ ਹਟਾ ਦਿੱਤਾ ਜਾਂਦਾ ਹੈ</string>
+  <!-- This is the title for a confirmation dialog asking the user to confirm that they want to clear, or delete, all of the traces t hey have saved. -->
+  <string name="clear_saved_traces_question">ਕੀ ਸੰਭਾਲੇ ਗਏ ਟ੍ਰੇਸਾਂ ਨੂੰ ਸਾਫ਼ ਕਰਨਾ ਹੈ?</string>
+  <!-- This is the confirmation dialog for deleting all of the saved traces. Don't translate "/data/local/traces/fans". After confirming, this decision is not reversible. -->
+  <string name="all_traces_will_be_deleted">ਸਾਰੇ ਟ੍ਰੇਸ /data/local/traces/fans ਤੋਂ ਮਿਟਾ ਦਿੱਤੇ ਜਾਣਗੇ</string>
+  <!-- This is the confirmation button indicating that the user does want to clear, or delete, all of the saved traces from their device. -->
+  <string name="clear">ਸਾਫ਼ ਕਰੋ</string>
+  <!-- This is the title for the directory holding the system traces. The user sees this when using a directory browsing app like the Files app. -->
+  <string name="system_traces_storage_title">ਪ੍ਰਸ਼ੰਸਕਾਂ ਦਾ ਪਤਾ ਲਗਾਉਣਾ</string>
+  <!-- These are keywords that the user can use to search for this app. 'systrace' should not be translated, as it is an app name. -->
+  <string name="keywords">ਸਿਟ੍ਰੇਸ, ਟ੍ਰੇਸ, ਪ੍ਰਦਰਸ਼ਨ</string>
+  <!-- Title of a dialog asking the user to confirm whether they want to share the trace. -->
+  <string name="share_trace">ਕੀ ਟ੍ਰੇਸ ਨੂੰ ਸਾਂਝਾ ਕਰਨਾ ਹੈ?</string>
+  <!-- Text informing user about contents of a trace file. This string appears when users share a trace file or reveal the System Traces directory in a directory browsing app like Files. -->
+  <string name="system_trace_sensitive_data">ਪ੍ਰਸ਼ੰਸਕ ਟਰੇਸਿੰਗ ਫ਼ਾਈਲਾਂ ਵਿੱਚ ਸੰਵੇਦਨਸ਼ੀਲ ਸਿਸਟਮ ਅਤੇ ਐਪ ਡੇਟਾ (ਜਿਵੇਂ ਕਿ ਐਪ ਵਰਤੋਂ) ਸ਼ਾਮਲ ਹੋ ਸਕਦੇ ਹਨ। ਸਿਰਫ਼ ਉਨ੍ਹਾਂ ਲੋਕਾਂ ਅਤੇ ਐਪਾਂ ਨਾਲ ਸਿਸਟਮ ਟ੍ਰੇਸ ਸਾਂਝੇ ਕਰੋ ਜਿਨ੍ਹਾਂ \'ਤੇ ਤੁਸੀਂ ਭਰੋਸਾ ਕਰਦੇ ਹੋ।</string>
+  <!-- Button on a dialog asking the user to confirm whether they want to share the trace. Clicking this button confirms that the user does want to share the trace. -->
+  <string name="share">ਸਾਂਝਾ ਕਰੋ</string>
+  <!-- Checkbox that indicates this dialog should not be shown again when the next trace is taken. -->
+  <string name="dont_show_again">ਦੁਬਾਰਾ ਨਾ ਦਿਖਾਓ</string>
+  <!-- Checkbox that indicates that we should use Perfetto to take traces. This feature is in beta. -->
+  <string name="use_perfetto_beta">Perfetto (ਬੀਟਾ) ਦੀ ਵਰਤੋਂ ਕਰੋ</string>
+  <string name="long_traces">ਲੰਬੇ ਟ੍ਰੇਸ</string>
+  <string name="long_traces_summary">ਡਿਵਾਈਸ ਸਟੋਰੇਜ ਵਿੱਚ ਲਗਾਤਾਰ ਸੰਭਾਲਿਆ ਜਾਂਦਾ ਹੈ</string>
+  <string name="max_long_trace_size">ਅਧਿਕਤਮ ਲੰਬਾ ਟ੍ਰੇਸ ਆਕਾਰ</string>
+  <string name="max_long_trace_duration">ਅਧਿਕਤਮ ਲੰਬੀ ਟ੍ਰੇਸ ਮਿਆਦ</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="two_hundred_mb">200 ਐਮਬੀ</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="one_gb">1 ਜੀਬੀ</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="five_gb">5 ਜੀਬੀ</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="ten_gb">10 ਜੀਬੀ</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="twenty_gb">20 ਜੀਬੀ</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="ten_minutes">10 ਮਿੰਟ</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="thirty_minutes">30 ਮਿੰਟ</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="one_hour">1 ਘੰਟਾ</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="eight_hours">8 ਘੰਟੇ</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="twelve_hours">12 ਘੰਟੇ</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="twentyfour_hours">24 ਘੰਟੇ</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="four_thousand_kb">4096 ਕੇਬੀ</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="eight_thousand_kb">8192 ਕੇਬੀ</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="sixteen_thousand_kb">16384 ਕੇਬੀ</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="twentyfour_thousand_kb">24576 ਕੇਬੀ</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="thirtytwo_thousand_kb">32768 ਕੇਬੀ</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="sixtyfive_thousand_kb">65536 ਕੇਬੀ</string>
+  <!-- This is the label for a picker that will let the user select the cpu mode. -->
+  <string name="perf_cpu_mode">Perf_CPU ਮੋਡ</string>
+  <!-- Choice for the user to select cpu mode. -->
+  <string name="performance_mode">ਪ੍ਰਦਰਸ਼ਨ</string>
+  <string name="equalization_mode_1">balance_1</string>
+  <string name="equalization_mode_2">balance_2</string>
+  <string name="equalization_mode_3">balance_3</string>
+  <string name="equalization_mode_4">balance_4</string>
+  <string name="equalization_mode_5">balance_5</string>
+</resources>

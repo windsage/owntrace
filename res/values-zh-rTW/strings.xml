@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- This is the user visible name of the app and title. The purpose of the app is to allow the user to take a "Trace" of the activity on their system, recording it for later review. Here's a description of the process, but we'd like to refer to it using the general term "tracing": https://developer.android.com/studio/command-line/systrace.html -->
+  <string name="system_tracing">風扇跟蹤</string>
+  <!-- This string is a description of what "System Tracing" is. It is used as a subtitle or summary text to describe this System Tracing app. -->
+  <string name="record_system_activity">記錄系統活動並在稍後進行分析以提升效能</string>
+  <!-- This is the label for a toggle button. When the toggle is enabled, we will begin recording a "Trace" of activity on the user's phone. This is also used as a Quick Settings tile label. -->
+  <string name="record_trace">錄製跟蹤記錄</string>
+  <!-- This is the label for a toggle that will let the user choose whether to trace debuggable applications in the trace they are collecting. -->
+  <string name="trace_debuggable_applications">跟蹤可偵錯的應用程式</string>
+  <!-- This is the title for a list of trace categories. The user will be able to select as many categories as they want to from this list (that list will not be translated). Categories are explained here: https://developer.android.com/studio/command-line/systrace.html -->
+  <string name="categories">類別</string>
+  <!-- When the user taps this button, the default list of categories to trace will be restored. -->
+  <string name="restore_default_categories">還原預設類別</string>
+  <!-- This is the label for a toast that appears when the user taps the "Restore default categories" button.-->
+  <string name="default_categories_restored">已還原預設類別</string>
+  <!-- This is the subtitle for when the default categories are selected. -->
+  <string name="default_categories">預設</string>
+  <!-- This is the subtitle to show the number of categories that are selected. -->
+  <plurals name="num_categories_selected">
+    <item quantity="zero">已選擇 %d</item>
+    <item quantity="one">已選擇 %d</item>
+    <item quantity="two">已選擇 %d</item>
+    <item quantity="few">已選擇 %d</item>
+    <item quantity="many">已選擇 %d</item>
+    <item quantity="other">已選擇 %d</item>
+  </plurals>
+  <!-- This is the label for a list of applications on the device that the user can add to their trace. The user will be able to select one or more applications from this list (that list will not be translated). -->
+  <string name="applications">應用程式</string>
+  <!-- This is an optional subtitle under the Applications label, indicating that there are no applications available to be traced because the device doesn't have any applications in debug mode. -->
+  <string name="no_debuggable_apps">沒有可偵錯的應用程式</string>
+  <!-- This is the label for a picker that will let the user select the buffer size to use for their trace. -->
+  <string name="buffer_size">每個 CPU 的緩衝區空間</string>
+  <!-- This setting is the label for a toggle button. When enabled, a Quick Settings tile will be available in the Quick Settings bar (available when you swipe down from the top of the screen). -->
+  <string name="show_quick_settings_tile">顯示「快速設定」圖塊</string>
+  <!-- This is the title for a notification that appears while a trace is being saved. -->
+  <string name="saving_trace">正在保存跟蹤記錄</string>
+  <!-- This is the title for a notification that appears after a trace was saved. -->
+  <string name="trace_saved">已儲存跟蹤記錄</string>
+  <!-- This is the subtitle for a notification that appears after a trace was saved. Tapping it will open the 'share sheet' that will appear at the bottom of the screen and will allow the user to share the trace, for example to email. -->
+  <string name="tap_to_share">點擊即可分享您的跟蹤記錄</string>
+  <!-- This is a message prompting the user to stop tracing. -->
+  <string name="stop_tracing">停止跟蹤</string>
+  <!-- This is the title for a notification that appears when a trace begins but for some reason a desired tracing category is not available. This ends in a colon because the subtitle for this notification is a list of the unavailable tracing categories. That list could contain one or more categories. (This should rarely happen) -->
+  <string name="tracing_categories_unavailable">某些跟蹤記錄類別不可用：</string>
+  <!-- This is the title for a notification that appears while a trace is being recorded. -->
+  <string name="trace_is_being_recorded">正在錄製跟蹤記錄</string>
+  <!-- This is the subtitle for a notification that appears while a trace is being recorded. Tapping the notification will stop the recording. -->
+  <string name="tap_to_stop_tracing">點擊即可停止跟蹤</string>
+  <!-- This is the label for a button that will clear all of the saved traces, removing them all from the directory they are saved to. There will be a confirmation dialog after this button is tapped, but clearing the traces after confirming is not reversible. -->
+  <string name="clear_saved_traces">清除已儲存的跟蹤記錄</string>
+  <string name="clear_saved_traces_summary">跟蹤記錄會在 1 個月後清除</string>
+  <!-- This is the title for a confirmation dialog asking the user to confirm that they want to clear, or delete, all of the traces t hey have saved. -->
+  <string name="clear_saved_traces_question">確定清除已儲存的跟蹤記錄？</string>
+  <!-- This is the confirmation dialog for deleting all of the saved traces. Don't translate "/data/local/traces/fans". After confirming, this decision is not reversible. -->
+  <string name="all_traces_will_be_deleted">所有跟蹤資料將從 /data/local/traces/fans 目錄中刪除</string>
+  <!-- This is the confirmation button indicating that the user does want to clear, or delete, all of the saved traces from their device. -->
+  <string name="clear">清除</string>
+  <!-- This is the title for the directory holding the system traces. The user sees this when using a directory browsing app like the Files app. -->
+  <string name="system_traces_storage_title">風扇跟蹤記錄</string>
+  <!-- These are keywords that the user can use to search for this app. 'systrace' should not be translated, as it is an app name. -->
+  <string name="keywords">系統跟蹤記錄、跟蹤記錄、效能</string>
+  <!-- Title of a dialog asking the user to confirm whether they want to share the trace. -->
+  <string name="share_trace">確定分享跟蹤記錄？</string>
+  <!-- Text informing user about contents of a trace file. This string appears when users share a trace file or reveal the System Traces directory in a directory browsing app like Files. -->
+  <string name="system_trace_sensitive_data">風扇跟蹤檔案可能包含敏感的系統和應用程式資料（例如應用程式使用情況）。請僅與您信任的人和應用程式分享系統跟蹤資料。</string>
+  <!-- Button on a dialog asking the user to confirm whether they want to share the trace. Clicking this button confirms that the user does want to share the trace. -->
+  <string name="share">分享</string>
+  <!-- Checkbox that indicates this dialog should not be shown again when the next trace is taken. -->
+  <string name="dont_show_again">不再顯示</string>
+  <!-- Checkbox that indicates that we should use Perfetto to take traces. This feature is in beta. -->
+  <string name="use_perfetto_beta">使用 Perfetto（beta 版）</string>
+  <string name="long_traces">長期跟蹤記錄</string>
+  <string name="long_traces_summary">持續保存到裝置儲存空間</string>
+  <string name="max_long_trace_size">最大長期跟蹤記錄大小</string>
+  <string name="max_long_trace_duration">最長長期跟蹤記錄時間</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="two_hundred_mb">200 MB</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="one_gb">1 GB</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="five_gb">5 GB</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="ten_gb">10 GB</string>
+  <!-- Choice for the user to select a maximum trace size. -->
+  <string name="twenty_gb">20 GB</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="ten_minutes">10 分鐘</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="thirty_minutes">30 分鐘</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="one_hour">1 小時</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="eight_hours">8 小時</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="twelve_hours">12 小時</string>
+  <!-- Choice for the user to select a maximum trace time. -->
+  <string name="twentyfour_hours">24 小時</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="four_thousand_kb">4096 KB</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="eight_thousand_kb">8192 KB</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="sixteen_thousand_kb">16384 KB</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="twentyfour_thousand_kb">24576 KB</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="thirtytwo_thousand_kb">32768 KB</string>
+  <!-- Choice for the user to select a maximum trace buffer size. -->
+  <string name="sixtyfive_thousand_kb">65536 KB</string>
+  <!-- This is the label for a picker that will let the user select the cpu mode. -->
+  <string name="perf_cpu_mode">Perf_CPU Mode</string>
+  <!-- Choice for the user to select cpu mode. -->
+  <string name="performance_mode">效能</string>
+  <string name="equalization_mode_1">balance_1</string>
+  <string name="equalization_mode_2">balance_2</string>
+  <string name="equalization_mode_3">balance_3</string>
+  <string name="equalization_mode_4">balance_4</string>
+  <string name="equalization_mode_5">balance_5</string>
+</resources>
