@@ -18,7 +18,7 @@ package com.android.fanstrace;
 
 import android.content.Context;
 import android.content.Intent;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 
 public class StopDfxTraceService extends TraceService {
     private static final String TAG = TraceUtils.TAG;

@@ -19,7 +19,7 @@ package com.android.fanstrace;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -46,15 +46,11 @@ public class StartTraceService extends TraceService {
             LogUtils.i(TAG, "StartTraceService does see a trace is starting.");
         }
 
-        PreferenceManager.getDefaultSharedPreferences(context)
-                .edit()
-                .putBoolean(context.getString(R.string.pref_key_tracing_on), true)
-                .commit();
+        prefs.edit().putBoolean(context.getString(R.string.pref_key_tracing_on), true).commit();
         // context.sendBroadcast(new Intent(MainFragment.ACTION_REFRESH_TAGS));
         Set<String> activeAvailableTags = Receiver.getActiveTags(context, prefs, true);
-        int bufferSize =
-                Integer.parseInt(prefs.getString(context.getString(R.string.pref_key_buffer_size),
-                        context.getString(R.string.default_buffer_size)));
+        int bufferSize = Integer.parseInt(prefs.getString(context.getString(R.string.pref_key_buffer_size),
+                context.getString(R.string.default_buffer_size)));
 
         boolean appTracing = prefs.getBoolean(context.getString(R.string.pref_key_apps), true);
         intent.setAction(INTENT_ACTION_FANS_START_TRACING);

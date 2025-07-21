@@ -25,8 +25,9 @@ import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Build;
-import android.preference.PreferenceManager;
 import android.util.ArraySet;
+
+import androidx.preference.PreferenceManager;
 
 import java.util.Arrays;
 import java.util.List;
@@ -116,12 +117,16 @@ public class Receiver extends BroadcastReceiver {
                 boolean appTracing =
                         prefs.getBoolean(context.getString(R.string.pref_key_apps), false);
 
-                TraceService.startTracing(context, activeAvailableTags, bufferSize, appTracing);
+                if (TraceService.FANS_AUTO_START) {
+                    TraceService.startTracing(context, activeAvailableTags, bufferSize, appTracing);
+                }
                 TraceService.startDfxTracing(context, activeAvailableTags, 8192,
                         appTracing); // 开机同时自启fans与dfx
                 LogUtils.e(TAG, "Receive  updateTracing");
             } else {
-                TraceService.stopTracing(context);
+                if (TraceService.FANS_AUTO_START) {
+                    TraceService.stopTracing(context);
+                }
                 TraceService.stopDfxTracing(context);
             }
         }

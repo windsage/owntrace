@@ -11,7 +11,7 @@ service start_fanstrace /system_ext/bin/start_fanstrace.sh
     oneshot
     disabled
 
-on property:sys.trace.fans_trace=start
+on property:tr_trace.fans_trace.status=start
     start start_fanstrace
 
 service stop_fanstrace /system_ext/bin/stop_fanstrace.sh
@@ -21,7 +21,7 @@ service stop_fanstrace /system_ext/bin/stop_fanstrace.sh
     oneshot
     disabled
 
-on property:sys.trace.fans_trace=dump
+on property:tr_trace.fans_trace.status=dump
     start stop_fanstrace
 
 service start_dfx_fanstrace /system_ext/bin/start_dfx_fanstrace.sh
@@ -31,7 +31,7 @@ service start_dfx_fanstrace /system_ext/bin/start_dfx_fanstrace.sh
     oneshot
     disabled
 
-on property:sys.trace.dfx_trace=start
+on property:tr_trace.dfx_trace.status=start
     start start_dfx_fanstrace
 
 service stop_dfx_fanstrace /system_ext/bin/stop_dfx_fanstrace.sh
@@ -41,7 +41,7 @@ service stop_dfx_fanstrace /system_ext/bin/stop_dfx_fanstrace.sh
     oneshot
     disabled
 
-on property:sys.trace.dfx_trace=dump
+on property:tr_trace.dfx_trace.status=dump
     start stop_dfx_fanstrace
 #SDD:fix for fanstrace for V by chao.xu5 at 20241210 end
 

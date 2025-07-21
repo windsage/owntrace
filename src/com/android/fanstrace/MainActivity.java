@@ -15,16 +15,34 @@ package com.android.fanstrace;
  * limitations under the License.
  */
 
-import android.app.Activity;
 import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 
-public class MainActivity extends Activity {
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+
+public class MainActivity extends AppCompatActivity {
     private int mSwitchEnable = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity);
+        // 确保 ActionBar 颜色与主题同步
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setBackgroundDrawable(
+                    new ColorDrawable(
+                            ContextCompat.getColor(this, R.color.action_bar_color_light)
+                    )
+            );
+        }
+
+        // 动态更新状态栏颜色（根据主题）
+        getWindow().setStatusBarColor(
+                ContextCompat.getColor(this, R.color.action_bar_color_light)
+        );
         Intent in = getIntent();
         mSwitchEnable = in.getIntExtra("switch", 0);
     }

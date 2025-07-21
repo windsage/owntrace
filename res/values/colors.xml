@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#F5F5F5</color>
+    <color name="colorPrimaryDark">#757575</color>
+    <color name="colorAccent">#FF9800</color>
+    <color name="white">#FFFFFF</color>
+    <!-- 默认（浅色模式） -->
+    <color name="action_bar_color_light">#F5F5F5</color>
+    <color name="text_color_light">#212121</color> <!-- 深色文字 -->
+
+    <!-- 深色模式（values-night/colors.xml） -->
+    <color name="action_bar_color_dark">#2D2D2D</color>
+    <color name="text_color_dark">#FFFFFF</color> <!-- 浅色文字 -->
+</resources>

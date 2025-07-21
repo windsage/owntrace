@@ -16,135 +16,100 @@
 
 package com.android.fanstrace;
 
-import android.annotation.Nullable;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.preference.ListPreference;
 import androidx.preference.MultiSelectListPreference;
-import androidx.preference.Preference;
-import androidx.preference.PreferenceFragment;
+import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
-import androidx.preference.SwitchPreference;
-
-import com.android.settingslib.HelpUtils;
+import androidx.preference.SwitchPreferenceCompat;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class MainFragment extends PreferenceFragment {
+public class MainFragment extends PreferenceFragmentCompat {
     public static final String ACTION_REFRESH_TAGS = "com.android.fanstrace.REFRESH_TAGS";
 
-    private SwitchPreference mTracingOn;
-
+    private SwitchPreferenceCompat mTracingOn;
+    private MultiSelectListPreference mTags;
     private AlertDialog mAlertDialog;
     private SharedPreferences mPrefs;
-
-    private MultiSelectListPreference mTags;
-
     private boolean mRefreshing;
-
     private BroadcastReceiver mRefreshReceiver;
 
-    OnSharedPreferenceChangeListener mSharedPreferenceChangeListener =
-            new OnSharedPreferenceChangeListener() {
-                public void onSharedPreferenceChanged(
-                        SharedPreferences sharedPreferences, String key) {
-                    refreshUi();
-                }
-            };
+    private final SharedPreferences.OnSharedPreferenceChangeListener mSharedPreferenceChangeListener =
+            (sharedPreferences, key) -> refreshUi();
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mPrefs = PreferenceManager.getDefaultSharedPreferences(
-                getActivity().getApplicationContext());
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        setPreferencesFromResource(R.xml.main, rootKey); // 关键修改点
 
-        mTracingOn = (SwitchPreference) findPreference(
-                getActivity().getString(R.string.pref_key_tracing_on));
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        mTracingOn = findPreference(getString(R.string.pref_key_tracing_on));
+        mTags = findPreference(getString(R.string.pref_key_tags));
 
-        mTracingOn.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                Receiver.updateTracing(getContext());
-                return true;
-            }
+        initializePreferences();
+    }
+
+    private void initializePreferences() {
+        Context context = getContext();
+
+        // Tracing On 开关
+        mTracingOn.setOnPreferenceClickListener(preference -> {
+            Receiver.updateTracing(context);
+            return true;
         });
 
-        mTags = (MultiSelectListPreference) findPreference(
-                getContext().getString(R.string.pref_key_tags));
-        mTags.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                if (!mRefreshing) {
-                    Set<String> set = (Set<String>) newValue;
-                    TreeMap<String, String> available = TraceUtils.listCategories();
-                    ArrayList<String> clean = new ArrayList<>(set.size());
+        // 标签设置
+        mTags.setOnPreferenceChangeListener((preference, newValue) -> {
+            if (!mRefreshing) {
+                Set<String> set = (Set<String>) newValue;
+                TreeMap<String, String> available = TraceUtils.listCategories();
+                ArrayList<String> clean = new ArrayList<>(set.size());
 
-                    for (String s : set) {
-                        if (available.containsKey(s)) {
-                            clean.add(s);
-                        }
+                for (String s : set) {
+                    if (available.containsKey(s)) {
+                        clean.add(s);
                     }
-                    set.clear();
-                    set.addAll(clean);
                 }
-                return true;
+                set.clear();
+                set.addAll(clean);
             }
+            return true;
         });
 
-        findPreference("restore_default_tags")
-                .setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        refreshUi(/* restoreDefaultTags =*/true);
-                        Toast.makeText(getContext(),
-                                     getContext().getString(R.string.default_categories_restored),
-                                     Toast.LENGTH_SHORT)
-                                .show();
-                        return true;
-                    }
-                });
+        // 恢复默认标签
+        findPreference("restore_default_tags").setOnPreferenceClickListener(preference -> {
+            refreshUi(true);
+            Toast.makeText(context,
+                    context.getString(R.string.default_categories_restored),
+                    Toast.LENGTH_SHORT).show();
+            return true;
+        });
 
-        findPreference("clear_saved_traces")
-                .setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        new AlertDialog.Builder(getContext())
-                                .setTitle(R.string.clear_saved_traces_question)
-                                .setMessage(R.string.all_traces_will_be_deleted)
-                                .setPositiveButton(R.string.clear,
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int which) {
-                                                TraceUtils.clearSavedTraces();
-                                            }
-                                        })
-                                .setNegativeButton(android.R.string.no,
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int which) {
-                                                dialog.dismiss();
-                                            }
-                                        })
-                                .create()
-                                .show();
-                        return true;
-                    }
-                });
+        // 清除保存的跟踪数据
+        findPreference("clear_saved_traces").setOnPreferenceClickListener(preference -> {
+            new AlertDialog.Builder(context)
+                    .setTitle(R.string.clear_saved_traces_question)
+                    .setMessage(R.string.all_traces_will_be_deleted)
+                    .setPositiveButton(R.string.clear,
+                            (dialog, which) -> TraceUtils.clearSavedTraces())
+                    .setNegativeButton(android.R.string.no,
+                            (dialog, which) -> dialog.dismiss())
+                    .create()
+                    .show();
+            return true;
+        });
 
         refreshUi();
 
@@ -157,57 +122,37 @@ public class MainFragment extends PreferenceFragment {
     }
 
     @Override
-    public View onCreateView(
-            LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        setHasOptionsMenu(true);
-
-        return super.onCreateView(inflater, container, savedInstanceState);
-    }
-
-    @Override
     public void onStart() {
         super.onStart();
-        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(
-                mSharedPreferenceChangeListener);
-        getActivity().registerReceiver(mRefreshReceiver, new IntentFilter(ACTION_REFRESH_TAGS));
+        Objects.requireNonNull(getPreferenceManager().getSharedPreferences())
+                .registerOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
+        requireActivity().registerReceiver(
+                mRefreshReceiver,
+                new IntentFilter(ACTION_REFRESH_TAGS),
+                Context.RECEIVER_NOT_EXPORTED);
         Receiver.updateTracing(getContext());
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        int enable = ((MainActivity) getActivity()).getSwitch();
-        // 根据暗码（debug or root）决定record trace开关是否可变
-        if (enable == 0) {
-            mTracingOn.setEnabled(false);
-        } else if (enable == 1) {
-            mTracingOn.setEnabled(true);
-        }
+        int enable = ((MainActivity) requireActivity()).getSwitch();
+        mTracingOn.setEnabled(enable == 1);
     }
+
     @Override
     public void onStop() {
-        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(
-                mSharedPreferenceChangeListener);
-        getActivity().unregisterReceiver(mRefreshReceiver);
+        super.onStop();
+        Objects.requireNonNull(getPreferenceManager().getSharedPreferences())
+                .unregisterOnSharedPreferenceChangeListener(mSharedPreferenceChangeListener);
+        requireActivity().unregisterReceiver(mRefreshReceiver);
 
         if (mAlertDialog != null) {
             mAlertDialog.cancel();
             mAlertDialog = null;
         }
-
-        super.onStop();
     }
 
-    @Override
-    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        addPreferencesFromResource(R.xml.main);
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        HelpUtils.prepareHelpMenuItem(
-                getActivity(), menu, R.string.help_url, this.getClass().getName());
-    }
 
     private void refreshUi() {
         refreshUi(/* restoreDefaultTags =*/false);
@@ -247,14 +192,14 @@ public class MainFragment extends PreferenceFragment {
         // Update subtitles on this screen.
         Set<String> categories = mTags.getValues();
         mTags.setSummary(Receiver.getDefaultTagList().equals(categories)
-                        ? context.getString(R.string.default_categories)
-                        : context.getResources().getQuantityString(
-                                  R.plurals.num_categories_selected, categories.size(),
-                                  categories.size()));
+                ? context.getString(R.string.default_categories)
+                : context.getResources().getQuantityString(
+                R.plurals.num_categories_selected, categories.size(),
+                categories.size()));
 
         ListPreference bufferSize =
                 (ListPreference) findPreference(context.getString(R.string.pref_key_buffer_size));
-        bufferSize.setSummary(bufferSize.getEntry());
+        bufferSize.setSummary(bufferSize.getEntry().toString());
 
         ListPreference perfCpuMode =
                 (ListPreference) findPreference(context.getString(R.string.pref_key_perf_cpu_mode));

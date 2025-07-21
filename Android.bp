@@ -8,18 +8,14 @@ android_app {
         proguard_flags_files: ["proguard.flags"],
     },
     static_libs: [
-        "androidx.leanback_leanback",
-        "androidx.leanback_leanback-preference",
         "androidx.appcompat_appcompat",
         "androidx.preference_preference",
         "androidx.recyclerview_recyclerview",
+        "com.google.android.material_material",
     ],
     resource_dirs: ["res"],
     srcs: ["src/**/*.java"],
     init_rc: ["fanstrace.rc"],
-    defaults: [
-        "SettingsLibDefaults",
-    ],
 }
 
 sh_binary {
@@ -45,4 +41,3 @@ sh_binary {
     system_ext_specific: true,
     src: "stop_dfx_fanstrace.sh",
 }
-

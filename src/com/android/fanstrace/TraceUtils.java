@@ -16,18 +16,18 @@
 
 package com.android.fanstrace;
 
-import android.os.AsyncTask;
-import android.os.FileUtils;
-import android.os.SystemProperties;
-
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 /**
  * Utility functions for tracing.
@@ -52,8 +52,8 @@ public class TraceUtils {
         public String getOutputExtension();
 
         public int traceStart(Collection<String> tags, int bufferSizeKb, boolean apps,
-                boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
-                String action);
+                              boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
+                              String action);
 
         public void traceStop(String action);
 
@@ -67,8 +67,8 @@ public class TraceUtils {
     }
 
     public static int traceStart(Collection<String> tags, int bufferSizeKb, boolean apps,
-            boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
-            String action) {
+                                 boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
+                                 String action) {
         return mTraceEngine.traceStart(tags, bufferSizeKb, apps, longTrace, maxLongTraceSizeMb,
                 maxLongTraceDurationMinutes, action);
     }
@@ -100,7 +100,7 @@ public class TraceUtils {
                 LogUtils.e(TAG, "clearSavedTraces failed with: " + rm.exitValue());
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LogUtils.e(TAG, "clear Traces failed: " + e.getMessage());
         }
     }
 
@@ -135,16 +135,53 @@ public class TraceUtils {
     }
 
     protected static void cleanupOlderFiles(final int minCount, final long minAge) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    FileUtils.deleteOlderFiles(new File(FANS_TRACE_DIRECTORY), minCount, minAge);
-                } catch (RuntimeException e) {
-                    LogUtils.e(TAG, "Failed to delete older traces" + e.getMessage());
-                }
-                return null;
-            }
-        }.execute();
+        FutureTask<Void> task = new FutureTask<Void>(
+                () -> {
+                    try {
+                        deleteOlderFiles(new File(TRACE_DIRECTORY), minCount, minAge);
+                    } catch (RuntimeException e) {
+                        LogUtils.e(TAG, "Failed to delete older traces " + e.getMessage());
+                    }
+                    return null;
+                });
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        // execute() instead of submit() because we don't need the result.
+        executor.execute(task);
     }
+
+
+    public static boolean deleteOlderFiles(File dir, int minCount, long minAgeMs) {
+        if (minCount < 0 || minAgeMs < 0) {
+            throw new IllegalArgumentException("Constraints must be positive or 0");
+        }
+
+        final File[] files = dir.listFiles();
+        if (files == null) {
+            return false;
+        }
+        // Sort with newest files first
+        Arrays.sort(files, new Comparator<File>() {
+            @Override
+            public int compare(File lhs, File rhs) {
+                return Long.compare(rhs.lastModified(), lhs.lastModified());
+            }
+        });
+
+        // Keep at least minCount files
+        boolean deleted = false;
+        for (int i = minCount; i < files.length; i++) {
+            final File file = files[i];
+
+            // Keep files newer than minAgeMs
+            final long age = System.currentTimeMillis() - file.lastModified();
+            if (age > minAgeMs) {
+                if (file.delete()) {
+                    LogUtils.v(TAG, "Deleted old file " + file);
+                    deleted = true;
+                }
+            }
+        }
+        return deleted;
+    }
+
 }

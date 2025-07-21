@@ -6,7 +6,7 @@ import android.util.Log;
 public class LogUtils {
     // 控制日志输出的开关
     private static boolean isLogEnabled =
-            SystemProperties.getBoolean("persist.sys.trace.log", false);
+            SystemProperties.getBoolean("persist.tr_trace.log.enable", false);
 
     // 设置日志开关的方法
     public static void setLogEnabled(boolean enabled) {
@@ -34,8 +34,6 @@ public class LogUtils {
 
     // Error日志
     public static void e(String tag, String message) {
-        if (isLogEnabled) {
-            Log.e(tag, message);
-        }
+        Log.e(tag, message);
     }
 }

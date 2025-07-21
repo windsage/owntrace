@@ -17,13 +17,16 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:androidprv="http://schemas.android.com/apk/prv/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
           package="com.android.fanstrace"
           android:versionCode="2"
           android:versionName="1.0">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="29"/>
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Used for adding the Quick Settings tile to the status bar. -->
     <uses-permission android:name="android.permission.STATUS_BAR" />
 
@@ -33,13 +36,11 @@
 
     <application android:label="@string/system_tracing"
                  android:banner="@drawable/banner">
-        <uses-library android:name="androidx.window.extensions" android:required="false"/>
-        <uses-library android:name="androidx.window.sidecar" android:required="false"/>
 
         <activity android:name=".MainActivity"
                   android:description="@string/record_system_activity"
                   android:label="@string/system_tracing"
-                  android:theme="@style/Theme.Settings"
+                  android:theme="@style/AppTheme"
                   android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -71,19 +72,30 @@
             </intent-filter>
         </receiver>
 
-        <service android:name=".StopTraceService"
-            android:exported="true" />
-
-        <service android:name=".StartTraceService"
-            android:exported="true" />
-
-        <service android:name=".StopDfxTraceService"
-            android:exported="true" />
-
-        <service android:name=".StartDfxTraceService"
-            android:exported="true" />
-
-        <service android:name=".TraceService"
-            android:exported="false" />
+        <service
+            android:name=".StopTraceService"
+            android:exported="true"
+            android:foregroundServiceType="specialUse"
+            tools:ignore="ForegroundServicePermission" />
+        <service
+            android:name=".StartTraceService"
+            android:exported="true"
+            android:foregroundServiceType="specialUse"
+            tools:ignore="ForegroundServicePermission" />
+        <service
+            android:name=".StopDfxTraceService"
+            android:exported="true"
+            android:foregroundServiceType="specialUse"
+            tools:ignore="ForegroundServicePermission" />
+        <service
+            android:name=".StartDfxTraceService"
+            android:exported="true"
+            android:foregroundServiceType="specialUse"
+            tools:ignore="ForegroundServicePermission" />
+        <service
+            android:name=".TraceService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            tools:ignore="ForegroundServicePermission" />
     </application>
 </manifest>

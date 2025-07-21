@@ -33,7 +33,10 @@
       <item name="preferenceTheme">@style/PreferenceTheme</item>
     </style>
 
-    <style name="TvTheme" parent="@style/Theme.Leanback">
-      <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Leanback</item>
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight">
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <item name="colorPrimary">@color/action_bar_color_light</item>
+        <item name="colorOnPrimary">@color/text_color_light</item>
+        <item name="android:windowLightStatusBar" >true</item>
     </style>
 </resources>

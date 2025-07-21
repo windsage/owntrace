@@ -23,9 +23,11 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.SystemProperties;
-import android.preference.PreferenceManager;
 import android.text.format.DateUtils;
+
+import androidx.preference.PreferenceManager;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,8 +38,6 @@ public class TraceService extends IntentService {
             "com.android.fanstrace_FANS_STOP_TRACING";
     protected static String INTENT_ACTION_FANS_START_TRACING =
             "com.android.fanstrace_FANS_START_TRACING";
-    private static String INTENT_ACTION_STOP_TRACING = "com.android.fanstrace_STOP_TRACING";
-    private static String INTENT_ACTION_START_TRACING = "com.android.fanstrace_START_TRACING";
     protected static String INTENT_ACTION_DFX_STOP_TRACING =
             "com.android.fanstrace_DFX_STOP_TRACING";
     protected static String INTENT_ACTION_DFX_START_TRACING =
@@ -48,8 +48,10 @@ public class TraceService extends IntentService {
     protected static String INTENT_EXTRA_APPS = "apps";
 
     protected static final boolean BOOT_START =
-            SystemProperties.getBoolean("persist.sys.trace.boot_start", false);
-
+            SystemProperties.getBoolean("persist.tr_trace.boot_start", true);
+    protected static final boolean FANS_AUTO_START = !(SystemProperties.getBoolean("ro.config.low_ram", false) ||
+            "go".equals(SystemProperties.get("ro.tr_build.device.type", "")) ||
+            "slim".equals(SystemProperties.get("ro.tr_build.device.type", "")));
     private static int TRACE_NOTIFICATION = 1;
     private static int SAVING_TRACE_NOTIFICATION = 2;
 
@@ -59,7 +61,7 @@ public class TraceService extends IntentService {
     public static void startTracing(
             final Context context, Collection<String> tags, int bufferSizeKb, boolean apps) {
         Intent intent = new Intent(context, TraceService.class);
-        intent.setAction(INTENT_ACTION_START_TRACING);
+        intent.setAction(INTENT_ACTION_FANS_START_TRACING);
         intent.putExtra(INTENT_EXTRA_TAGS, new ArrayList(tags));
         intent.putExtra(INTENT_EXTRA_BUFFER, bufferSizeKb);
         intent.putExtra(INTENT_EXTRA_APPS, apps);
@@ -78,7 +80,7 @@ public class TraceService extends IntentService {
 
     public static void stopTracing(final Context context) {
         Intent intent = new Intent(context, TraceService.class);
-        intent.setAction(INTENT_ACTION_STOP_TRACING);
+        intent.setAction(INTENT_ACTION_FANS_STOP_TRACING);
         context.startForegroundService(intent);
     }
 
@@ -101,14 +103,7 @@ public class TraceService extends IntentService {
     public void onHandleIntent(Intent intent) {
         Context context = getApplicationContext();
 
-        if (intent.getAction().equals(INTENT_ACTION_START_TRACING)) {
-            startTracingInternal(intent.getStringArrayListExtra(INTENT_EXTRA_TAGS),
-                    intent.getIntExtra(INTENT_EXTRA_BUFFER,
-                            Integer.parseInt(context.getString(R.string.default_buffer_size))),
-                    intent.getBooleanExtra(INTENT_EXTRA_APPS, false));
-        } else if (intent.getAction().equals(INTENT_ACTION_STOP_TRACING)) {
-            stopTracingInternal(TraceUtils.getOutputFilename(INTENT_ACTION_STOP_TRACING), false);
-        } else if (intent.getAction().equals(INTENT_ACTION_FANS_STOP_TRACING)) {
+        if (intent.getAction().equals(INTENT_ACTION_FANS_STOP_TRACING)) {
             stopTracingInternal(
                     TraceUtils.getOutputFilename(INTENT_ACTION_FANS_STOP_TRACING), true);
         } else if (intent.getAction().equals(INTENT_ACTION_FANS_START_TRACING)) {
@@ -141,13 +136,13 @@ public class TraceService extends IntentService {
                         .setContentTitle(title)
                         .setTicker(title)
                         .setContentText(msg)
-                        .setContentIntent(PendingIntent.getBroadcast(context, 0, stopIntent, 0))
+                        .setContentIntent(PendingIntent.getBroadcast(context, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE))
                         .setOngoing(true)
                         .setLocalOnly(true)
                         .setColor(getColor(
                                 com.android.internal.R.color.system_notification_accent_color));
 
-        startForeground(TRACE_NOTIFICATION, notification.build());
+        startForeground(TRACE_NOTIFICATION, notification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         int ret = TraceUtils.traceStart(
                 tags, bufferSizeKb, appTracing, false, 0, 0, INTENT_ACTION_FANS_START_TRACING);
         if (ret == 1) {
@@ -188,9 +183,9 @@ public class TraceService extends IntentService {
                 outputFilename, forceStop, INTENT_ACTION_FANS_STOP_TRACING);
 
         if (TraceUtils.traceDump(file, INTENT_ACTION_FANS_STOP_TRACING)) {
-            SystemProperties.set("sys.trace.trace_name", "");
+            SystemProperties.set("tr_trace.dfx_trace.trace_name", "");
             if (forceStop) {
-                SystemProperties.set("sys.trace.trace_name", outputFilename);
+                SystemProperties.set("tr_trace.dfx_trace.trace_name", outputFilename);
             }
         }
 
@@ -216,7 +211,7 @@ public class TraceService extends IntentService {
                         .setContentTitle(title)
                         .setTicker(title)
                         .setContentText(msg)
-                        .setContentIntent(PendingIntent.getBroadcast(context, 0, stopIntent, 0))
+                        .setContentIntent(PendingIntent.getBroadcast(context, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE))
                         .setOngoing(true)
                         .setLocalOnly(true)
                         .setColor(getColor(
@@ -263,9 +258,9 @@ public class TraceService extends IntentService {
                 TraceUtils.getOutputFile(outputFilename, forceStop, INTENT_ACTION_DFX_STOP_TRACING);
 
         if (TraceUtils.traceDump(file, INTENT_ACTION_DFX_STOP_TRACING)) {
-            SystemProperties.set("sys.trace.trace_name", "");
+            SystemProperties.set("tr_trace.dfx_trace.trace_name", "");
             if (forceStop) {
-                SystemProperties.set("sys.trace.trace_name", outputFilename);
+                SystemProperties.set("tr_trace.dfx_trace.trace_name", outputFilename);
             }
         }
 

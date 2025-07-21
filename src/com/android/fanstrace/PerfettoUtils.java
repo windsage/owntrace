@@ -27,9 +27,9 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Utility functions for calling Perfetto
@@ -54,6 +54,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
     private static final String MEMORY_TAG = "memory";
     private static final String POWER_TAG = "power";
     private static final String SCHED_TAG = "sched";
+    private static final boolean IS_QCOM = "qcom".equalsIgnoreCase(SystemProperties.get("ro.hardware"));
 
     public String getName() {
         return NAME;
@@ -76,13 +77,13 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                 try {
                     Files.deleteIfExists(Paths.get(TEMP_DFX_LOCATION));
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    LogUtils.e(TAG, "Starting DFX trace: deleting failed!");
                 }
             } else {
                 try {
                     Files.deleteIfExists(Paths.get(TEMP_TRACE_LOCATION));
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    LogUtils.e(TAG, "Starting Fans trace: deleting failed!");
                 }
             }
         }
@@ -143,7 +144,11 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             config.append("      ftrace_events: \"sched/sched_waking\"\n");
             // config.append("      ftrace_events: \"sched/sched_wakeup_new\"\n");
             config.append("      ftrace_events: \"power/cpu_frequency\"\n");
-            config.append("      ftrace_events: \"power/gpu_frequency\"\n");
+            if (IS_QCOM) {
+                config.append("      ftrace_events: \"kgsl/gpu_frequency\"\n");
+            } else {
+                config.append("      ftrace_events: \"power/gpu_frequency\"\n");
+            }
             // config.append("      ftrace_events: \"power/cpu_idle\"\n");
             // config.append("      ftrace_events: \"power/suspend_resume\"\n");
             // config.append("      ftrace_events: \"raw_syscalls/sys_enter\"\n");
@@ -220,7 +225,8 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         // If the here-doc ends early, within the config string, exit immediately.
         // This should never happen.
         if (configString.contains(MARKER)) {
-            throw new RuntimeException("The arguments to the Perfetto command are malformed.");
+            LogUtils.e(TAG, "The arguments to the Perfetto command are malformed.");
+            return -1;
         }
         String cmd;
         if (action == TraceService.INTENT_ACTION_DFX_START_TRACING) {
@@ -250,7 +256,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                 return -1;
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LogUtils.e(TAG, "Trace start failed: " + e.getMessage());
         }
 
         LogUtils.v(TAG, "perfetto traceStart succeeded!");
@@ -277,7 +283,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                 LogUtils.e(TAG, "perfetto traceStop failed with: " + process.exitValue());
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LogUtils.e(TAG, "Trace stop failed: " + e.getMessage());
         }
     }
 
@@ -311,14 +317,14 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             }
 
             LogUtils.i(TAG, "Saving perfetto trace to " + outFile);
-            SystemProperties.set("sys.trace.dump_time", sdf.format(new Date()));
+            SystemProperties.set("tr_trace.dfx_trace.dump_time", sdf.format(new Date()));
             try {
                 Os.rename(TEMP_DFX_LOCATION, outFile.getCanonicalPath());
                 double fileSize = getFileSizeInMB(outFile.getCanonicalPath());
-                SystemProperties.set("sys.trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
+                SystemProperties.set("tr_trace.dfx_trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
                 LogUtils.i(TAG, "current dfx trace size is " + fileSize + " MB");
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                LogUtils.e(TAG, "Trace dump failed: " + e.getMessage());
             }
         } else {
             if (!Files.exists(Paths.get(TEMP_TRACE_LOCATION))) {
@@ -327,15 +333,15 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             }
 
             LogUtils.i(TAG, "Saving perfetto trace to " + outFile);
-            SystemProperties.set("sys.trace.dump_time", sdf.format(new Date()));
+            SystemProperties.set("tr_trace.dfx_trace.dump_time", sdf.format(new Date()));
 
             try {
                 Os.rename(TEMP_TRACE_LOCATION, outFile.getCanonicalPath());
                 double fileSize = getFileSizeInMB(outFile.getCanonicalPath());
-                SystemProperties.set("sys.trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
+                SystemProperties.set("tr_trace.dfx_trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
                 LogUtils.i(TAG, "current fans trace size is " + fileSize + " MB");
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                LogUtils.e(TAG, "Trace dump failed: " + e.getMessage());
             }
         }
         LogUtils.e(TAG, "" + action);
@@ -365,10 +371,12 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             } else if (result == 2) {
                 return false;
             } else {
-                throw new RuntimeException("Perfetto error: " + result);
+                LogUtils.e(TAG, "Perfetto error: " + result);
+                return false;
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LogUtils.e(TAG, "Perfetto tracingOn error:" + e.getMessage());
+            return false;
         }
     }
 }
