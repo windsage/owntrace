@@ -32,19 +32,17 @@ import android.os.Build;
  * Utility functions for calling Perfetto
  */
 public class PerfettoUtils implements TraceUtils.TraceEngine {
-    static final String TAG = "Fanstrace";
+    private static final String TAG = "Fanstrace";
     public static final String NAME = "PERFETTO";
 
     private static final String OUTPUT_EXTENSION = "ptrace";
     private static final String TEMP_DIR = "/data/local/traces/fans/";
     private static final String TEMP_DFX_DIR = "/data/local/traces/DFX/";
-    private static final String TEMP_TRACE_LOCATION =
-            "/data/local/traces/.fans_trace-in-progress.trace";
-    private static final String TEMP_DFX_LOCATION =
-            "/data/local/traces/.DFX_trace-in-progress.trace";
+    static final String TEMP_TRACE_LOCATION = "/data/local/traces/.fans_trace-in-progress.trace";
+    static final String TEMP_DFX_LOCATION = "/data/local/traces/.DFX_trace-in-progress.trace";
 
-    private static final String PERFETTO_TAG = "Fanstrace";
-    private static final String PERFETTO_DFX_TAG = "DFXtrace";
+    static final String PERFETTO_TAG = "Fanstrace";
+    static final String PERFETTO_DFX_TAG = "DFXtrace";
     private static final String MARKER = "PERFETTO_ARGUMENTS";
     private static final int STARTUP_TIMEOUT_MS = 10000;
 
@@ -61,29 +59,26 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
     }
 
     public int traceStart(Collection<String> tags, int bufferSizeKb, boolean apps,
-            boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
-            String action) {
-        if (isTracingOn(action)) {
-            LogUtils.i(TAG, "Attempting to start perfetto trace but trace is already in progress");
-            return 0;
-        } else {
-            // Ensure the temporary trace file is cleared.
-            LogUtils.i(TAG, action);
-            if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)) {
-                try {
-                    Files.deleteIfExists(Paths.get(TEMP_DFX_LOCATION));
-                } catch (Exception e) {
-                    LogUtils.e(TAG, "Starting DFX trace: deleting failed!");
-                }
-            } else {
-                try {
-                    Files.deleteIfExists(Paths.get(TEMP_TRACE_LOCATION));
-                } catch (Exception e) {
-                    LogUtils.e(TAG, "Starting Fans trace: deleting failed!");
-                }
+                          boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
+                          String action) {
+        // Ensure the temporary trace file is cleared.
+        LogUtils.i(TAG, action);
+        String tempFile = TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)
+                ? TEMP_DFX_LOCATION : TEMP_TRACE_LOCATION;
+        File file = new File(tempFile);
+        if (file.exists()) {
+            // 理论上不应该走到这里
+            long fileSize = file.length();
+            LogUtils.w(TAG, "Unexpected: temp file still exists (size=" + fileSize +
+                    "), deleting as fallback");
+            // 确保删除旧文件
+            try {
+                Files.deleteIfExists(Paths.get(tempFile));
+                LogUtils.i(TAG, "Deleted old temp file: " + tempFile);
+            } catch (Exception e) {
+                LogUtils.e(TAG, "Failed to delete old temp file: " + e.getMessage());
             }
         }
-
         // The user chooses a per-CPU buffer size due to atrace limitations.
         // So we use this to ensure that we reserve the correctly-sized buffer.
         int numCpus = Runtime.getRuntime().availableProcessors();
@@ -239,7 +234,6 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                     + " <<" + MARKER + "\n" + configString + "\n" + MARKER;
         }
         LogUtils.i(TAG, action);
-        LogUtils.v(TAG, "Starting perfetto trace.");
         try {
             Process process = (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action))
                     ? TraceUtils.exec(cmd, TEMP_DFX_DIR)
@@ -268,7 +262,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         LogUtils.v(TAG, "Stopping perfetto trace.");
 
         if (!isTracingOn(action)) {
-            LogUtils.w(TAG,
+            LogUtils.i(TAG,
                     "No trace appears to be in progress. Stopping perfetto trace may not work.");
         }
         String cmd;
@@ -300,46 +294,50 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
 
     public boolean traceDump(File outFile, String action) {
         traceStop(action);
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-        // Short-circuit if the file we're trying to dump to doesn't exist.
-        if (TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
-            if (!Files.exists(Paths.get(TEMP_DFX_LOCATION))) {
-                LogUtils.e(TAG, "In-progress trace file doesn't exist, aborting trace dump.");
-                return false;
-            }
 
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+        String tempFile = TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)
+                ? TEMP_DFX_LOCATION : TEMP_TRACE_LOCATION;
+
+        // === 等待文件就绪 ===
+        if (!TraceUtils.TraceStateChecker.waitForTraceFile(tempFile, 10000)) {
+            LogUtils.e(TAG, "In-progress trace file doesn't exist, aborting trace dump.");
+            return false;
+        }
+
+        if (TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
             LogUtils.i(TAG, "Saving perfetto trace to " + outFile);
             SystemProperties.set("tr_trace.dfx_trace.dump_time", sdf.format(new Date()));
+
             try {
                 Os.rename(TEMP_DFX_LOCATION, outFile.getCanonicalPath());
                 double fileSize = getFileSizeInMB(outFile.getCanonicalPath());
-                SystemProperties.set("tr_trace.dfx_trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
+                SystemProperties.set("tr_trace.dfx_trace.dump_size_mb",
+                        String.format(Locale.US, "%.2f", fileSize));
                 LogUtils.i(TAG, "current dfx trace size is " + fileSize + " MB");
             } catch (Exception e) {
                 LogUtils.e(TAG, "Trace dump failed: " + e.getMessage());
-            }
-        } else {
-            if (!Files.exists(Paths.get(TEMP_TRACE_LOCATION))) {
-                LogUtils.e(TAG, "In-progress trace file doesn't exist, aborting trace dump.");
                 return false;
             }
-
+        } else {
             LogUtils.i(TAG, "Saving perfetto trace to " + outFile);
             SystemProperties.set("tr_trace.fans_trace.dump_time", sdf.format(new Date()));
 
             try {
                 Os.rename(TEMP_TRACE_LOCATION, outFile.getCanonicalPath());
                 double fileSize = getFileSizeInMB(outFile.getCanonicalPath());
-                SystemProperties.set("tr_trace.fans_trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
+                SystemProperties.set("tr_trace.fans_trace.dump_size_mb",
+                        String.format(Locale.US, "%.2f", fileSize));
                 LogUtils.i(TAG, "current fans trace size is " + fileSize + " MB");
             } catch (Exception e) {
                 LogUtils.e(TAG, "Trace dump failed: " + e.getMessage());
                 return false;
             }
         }
+
         LogUtils.i(TAG, action);
-        outFile.setReadable(true, false); // (readable, ownerOnly)
-        outFile.setWritable(true, false); // (readable, ownerOnly)
+        outFile.setReadable(true, false);
+        outFile.setWritable(true, false);
         return true;
     }
 

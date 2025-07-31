@@ -65,6 +65,7 @@ public class Receiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
+        LogUtils.i(TAG, "onReceive action =" + intent.getAction());
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             long bootTime = SystemClock.elapsedRealtime();
             long currentUptime = SystemClock.uptimeMillis();
@@ -137,11 +138,11 @@ public class Receiver extends BroadcastReceiver {
                 boolean appTracing =
                         prefs.getBoolean(context.getString(R.string.pref_key_apps), false);
 
-                if (TraceService.FANS_AUTO_START) {
+                if (TraceService.isFansAutoStart(context)) {
                     TraceService.startTracing(context, activeAvailableTags, bufferSize, appTracing);
                 }
             } else {
-                if (TraceService.FANS_AUTO_START) {
+                if (TraceService.isFansAutoStart(context)) {
                     TraceService.stopTracing(context);
                 }
             }
@@ -190,8 +191,6 @@ public class Receiver extends BroadcastReceiver {
             tags.retainAll(available);
         }
 
-        LogUtils.v(TAG,
-                "getActiveTags(onlyAvailable=" + onlyAvailable + ") = \"" + tags.toString() + "\"");
         return tags;
     }
 
@@ -201,8 +200,6 @@ public class Receiver extends BroadcastReceiver {
         Set<String> available = TraceUtils.listCategories().keySet();
 
         tags.removeAll(available);
-
-        LogUtils.v(TAG, "getActiveUnavailableTags() = \"" + tags.toString() + "\"");
         return tags;
     }
 

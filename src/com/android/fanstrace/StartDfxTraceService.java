@@ -43,15 +43,17 @@ public class StartDfxTraceService extends TraceService {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         // If the user thinks tracing is off and the trace processor agrees, we have no work to do.
         // We must still start a foreground service, but let's log as an FYI.
-        if (TraceUtils.isTracingOn(INTENT_ACTION_DFX_START_TRACING)) {
-            LogUtils.i(TAG, "StartDfxTraceService does see a trace is starting.");
+        if (!TraceUtils.TraceStateChecker.shouldStartTrace(INTENT_ACTION_DFX_START_TRACING)) {
+            LogUtils.i(TAG, "StartDfxTraceService: trace already running, skip start");
+            prefs.edit().putBoolean(context.getString(R.string.pref_key_dfx_tracing_on), true).commit();
+            return;
         }
+        LogUtils.i(TAG, "StartDfxTraceService: starting new trace");
 
         prefs.edit().putBoolean(context.getString(R.string.pref_key_dfx_tracing_on), true).commit();
         // context.sendBroadcast(new Intent(MainFragment.ACTION_REFRESH_TAGS));
         Set<String> activeAvailableTags = Receiver.getActiveTags(context, prefs, true);
         int bufferSize = 8192; // 暂时写死
-        LogUtils.i(TAG, "onHandleIntent bufferSize == " + bufferSize);
         boolean appTracing = prefs.getBoolean(context.getString(R.string.pref_key_apps), true);
         intent.setAction(INTENT_ACTION_DFX_START_TRACING);
         intent.putExtra(INTENT_EXTRA_TAGS, new ArrayList(activeAvailableTags));

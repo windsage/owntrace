@@ -18,6 +18,7 @@ package com.android.fanstrace;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
 public class StopTraceService extends TraceService {
@@ -35,17 +36,20 @@ public class StopTraceService extends TraceService {
     @Override
     public void onHandleIntent(Intent intent) {
         Context context = getApplicationContext();
-
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         // If the user thinks tracing is off and the trace processor agrees, we have no work to do.
         // We must still start a foreground service, but let's log as an FYI.
-        if (!TraceUtils.isTracingOn(INTENT_ACTION_FANS_STOP_TRACING)) {
-            LogUtils.i(TAG, "StopTraceService does not see a trace to stop.");
-        }
+        if (!TraceUtils.TraceStateChecker.shouldStopTrace(INTENT_ACTION_FANS_STOP_TRACING)) {
+            LogUtils.i(TAG, "StopTraceService: nothing to stop, skipping");
 
-        PreferenceManager.getDefaultSharedPreferences(context)
-                .edit()
-                .putBoolean(context.getString(R.string.pref_key_tracing_on), false)
-                .commit();
+            // 重置preference保持一致性
+            prefs.edit().putBoolean(context.getString(R.string.pref_key_tracing_on), false).commit();
+
+            return;
+        }
+        LogUtils.i(TAG, "StopTraceService: executing stop flow");
+
+        prefs.edit().putBoolean(context.getString(R.string.pref_key_tracing_on), false).commit();
         // context.sendBroadcast(new Intent(MainFragment.ACTION_REFRESH_TAGS));
 
         intent.setAction(INTENT_ACTION_FANS_STOP_TRACING);

@@ -42,10 +42,13 @@ public class StartTraceService extends TraceService {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         // If the user thinks tracing is off and the trace processor agrees, we have no work to do.
         // We must still start a foreground service, but let's log as an FYI.
-        if (TraceUtils.isTracingOn(INTENT_ACTION_FANS_START_TRACING)) {
-            LogUtils.i(TAG, "StartTraceService does see a trace is starting.");
+        if (!TraceUtils.TraceStateChecker.shouldStartTrace(INTENT_ACTION_FANS_START_TRACING)) {
+            LogUtils.i(TAG, "StartTraceService: trace already running, skip start");
+            prefs.edit().putBoolean(context.getString(R.string.pref_key_tracing_on), true).commit();
+            return;  // 直接返回
         }
 
+        LogUtils.i(TAG, "StartTraceService: starting new trace");
         prefs.edit().putBoolean(context.getString(R.string.pref_key_tracing_on), true).commit();
         // context.sendBroadcast(new Intent(MainFragment.ACTION_REFRESH_TAGS));
         Set<String> activeAvailableTags = Receiver.getActiveTags(context, prefs, true);

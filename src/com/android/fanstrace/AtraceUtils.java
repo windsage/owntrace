@@ -37,7 +37,7 @@ import java.util.TreeMap;
  * Utility functions for calling atrace
  */
 public class AtraceUtils implements TraceUtils.TraceEngine {
-    static final String TAG = "Fanstrace";
+    private static final String TAG = "Fanstrace";
 
     private static final String DEBUG_TRACING_FILE = "/sys/kernel/debug/tracing/tracing_on";
     private static final String TRACING_FILE = "/sys/kernel/tracing/tracing_on";
@@ -61,7 +61,6 @@ public class AtraceUtils implements TraceUtils.TraceEngine {
         String cmd = "atrace --async_start -c -b " + bufferSizeKb + " " + appParameter
                 + TextUtils.join(" ", tags);
 
-        LogUtils.v(TAG, "Starting async atrace: " + cmd);
         try {
             Process atrace = TraceUtils.exec(cmd);
             if (atrace.waitFor() != 0) {
@@ -154,7 +153,6 @@ public class AtraceUtils implements TraceUtils.TraceEngine {
     public static TreeMap<String, String> atraceListCategories() {
         String cmd = "atrace --list_categories";
 
-        LogUtils.v(TAG, "Listing tags: " + cmd);
         try {
             Process atrace = TraceUtils.exec(cmd);
 

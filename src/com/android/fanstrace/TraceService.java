@@ -49,14 +49,77 @@ public class TraceService extends IntentService {
 
     protected static final boolean BOOT_START =
             SystemProperties.getBoolean("persist.tr_trace.boot_start", true);
-    protected static final boolean FANS_AUTO_START = !(SystemProperties.getBoolean("ro.config.low_ram", false) ||
-            "go".equals(SystemProperties.get("ro.tr_build.device.type", "")) ||
-            "slim".equals(SystemProperties.get("ro.tr_build.device.type", "")));
     private static int TRACE_NOTIFICATION = 1;
     private static int SAVING_TRACE_NOTIFICATION = 2;
 
     private static final int MIN_KEEP_COUNT = 1;
     private static final long MIN_KEEP_AGE = 2 * DateUtils.DAY_IN_MILLIS;
+    // Threshold: 7.0GB in bytes (7.0 * 1024 * 1024 * 1024)
+    // This allows 8GB devices (which report ~7.2-7.5GB) to enable FANS trace
+    private static final long RAM_THRESHOLD_BYTES = 7516192768L;
+
+    // Use lazy initialization for FANS_AUTO_START since we need Context
+    private static Boolean sFansAutoStart = null;
+
+    /**
+     * Check if FANS trace should auto-start based on device RAM
+     * @param context Application context
+     * @return true if device RAM >= 7.0GB (to catch 8GB+ devices), false otherwise
+     */
+    public static boolean isFansAutoStart(Context context) {
+        if (sFansAutoStart == null) {
+            sFansAutoStart = checkFansAutoStart(context);
+        }
+        return sFansAutoStart;
+    }
+
+    /**
+     * Check if FANS trace should auto-start based on device configuration and RAM
+     * @param context Application context
+     * @return true if device should enable FANS auto-start, false otherwise
+     */
+    private static boolean checkFansAutoStart(Context context) {
+        // First check low_ram device flag
+        if (SystemProperties.getBoolean("ro.config.low_ram", false)) {
+            LogUtils.i(TraceUtils.TAG, "FANS_AUTO_START disabled: low_ram device");
+            return false;
+        }
+
+        // Check device type
+        String deviceType = SystemProperties.get("ro.tr_build.device.type", "");
+        if ("go".equals(deviceType) || "slim".equals(deviceType)) {
+            LogUtils.i(TraceUtils.TAG, "FANS_AUTO_START disabled: device type is " + deviceType);
+            return false;
+        }
+
+        // Check total RAM
+        try {
+            android.app.ActivityManager activityManager =
+                (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+
+            if (activityManager != null) {
+                android.app.ActivityManager.MemoryInfo memInfo =
+                    new android.app.ActivityManager.MemoryInfo();
+                activityManager.getMemoryInfo(memInfo);
+                long totalRam = memInfo.totalMem;  // in bytes
+
+                // Convert to GB for logging (using 1024-based calculation)
+                double totalRamGB = totalRam / (1024.0 * 1024.0 * 1024.0);
+
+                boolean shouldStart = totalRam >= RAM_THRESHOLD_BYTES;
+                LogUtils.i(TraceUtils.TAG, String.format(java.util.Locale.US,
+                        "Device RAM: %.2f GB, Threshold: 7.0 GB, FANS_AUTO_START: %b",
+                        totalRamGB, shouldStart));
+
+                return shouldStart;
+            }
+        } catch (Exception e) {
+            LogUtils.e(TraceUtils.TAG, "Failed to get memory info: " + e.getMessage());
+        }
+
+        LogUtils.i(TraceUtils.TAG, "Cannot determine RAM size, defaulting FANS_AUTO_START to true");
+        return true;
+    }
 
     public static void startTracing(
             final Context context, Collection<String> tags, int bufferSizeKb, boolean apps) {
