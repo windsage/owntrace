@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-
+import android.os.Build;
 /**
  * Utility functions for calling Perfetto
  */
@@ -38,7 +38,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
     static final String TAG = "Fanstrace";
     public static final String NAME = "PERFETTO";
 
-    private static final String OUTPUT_EXTENSION = "perfetto-trace";
+    private static final String OUTPUT_EXTENSION = "ptrace";
     private static final String TEMP_DIR = "/data/local/traces/fans/";
     private static final String TEMP_DFX_DIR = "/data/local/traces/DFX/";
     private static final String TEMP_TRACE_LOCATION =
@@ -54,7 +54,6 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
     private static final String MEMORY_TAG = "memory";
     private static final String POWER_TAG = "power";
     private static final String SCHED_TAG = "sched";
-    private static final boolean IS_QCOM = "qcom".equalsIgnoreCase(SystemProperties.get("ro.hardware"));
 
     public String getName() {
         return NAME;
@@ -144,18 +143,16 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             config.append("      ftrace_events: \"sched/sched_waking\"\n");
             // config.append("      ftrace_events: \"sched/sched_wakeup_new\"\n");
             config.append("      ftrace_events: \"power/cpu_frequency\"\n");
-            if (IS_QCOM) {
-                config.append("      ftrace_events: \"kgsl/gpu_frequency\"\n");
-            } else {
-                config.append("      ftrace_events: \"power/gpu_frequency\"\n");
-            }
+            config.append("      ftrace_events: \"kgsl/gpu_frequency\"\n");
+            config.append("      ftrace_events: \"power/gpu_frequency\"\n");
+            config.append("      ftrace_events: \"power/cpu_frequency_limits\"\n");
             // config.append("      ftrace_events: \"power/cpu_idle\"\n");
             // config.append("      ftrace_events: \"power/suspend_resume\"\n");
             // config.append("      ftrace_events: \"raw_syscalls/sys_enter\"\n");
             // config.append("      ftrace_events: \"raw_syscalls/sys_exit\"\n");
             // Temporarily used by the storage analysis at Jan 8th, 2025 start
             config.append("      ftrace_events: \"block/block_rq_insert\"\n");
-            if (bufferSizeKb != 8192) {
+            if (Build.PRODUCT.contains("X6879") || bufferSizeKb != 8192) {
                 config.append("      ftrace_events: \"block/block_rq_issue\"\n");
                 config.append("      ftrace_events: \"block/block_rq_complete\"\n");
             }
@@ -187,6 +184,13 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                     .append("    }\n");
         }
         config.append("  }\n").append("} \n");
+
+        // add frametimeline
+        config.append("data_sources {\n")
+                .append("  config {\n")
+                .append("    name: \"android.surfaceflinger.frametimeline\"\n")
+                .append("    target_buffer: 0\n")
+                .append("  }\n").append("} \n");
 
         if (tags.contains(POWER_TAG)) {
             config.append("data_sources: {\n")
