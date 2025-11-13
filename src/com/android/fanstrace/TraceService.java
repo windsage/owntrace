@@ -183,9 +183,9 @@ public class TraceService extends IntentService {
                 outputFilename, forceStop, INTENT_ACTION_FANS_STOP_TRACING);
 
         if (TraceUtils.traceDump(file, INTENT_ACTION_FANS_STOP_TRACING)) {
-            SystemProperties.set("tr_trace.dfx_trace.trace_name", "");
+            SystemProperties.set("tr_trace.fans_trace.trace_name", "");
             if (forceStop) {
-                SystemProperties.set("tr_trace.dfx_trace.trace_name", outputFilename);
+                SystemProperties.set("tr_trace.fans_trace.trace_name", outputFilename);
             }
         }
 

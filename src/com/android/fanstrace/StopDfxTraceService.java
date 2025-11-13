@@ -44,7 +44,7 @@ public class StopDfxTraceService extends TraceService {
 
         PreferenceManager.getDefaultSharedPreferences(context)
                 .edit()
-                .putBoolean(context.getString(R.string.pref_key_tracing_on), false)
+                .putBoolean(context.getString(R.string.pref_key_dfx_tracing_on), false)
                 .commit();
         // context.sendBroadcast(new Intent(MainFragment.ACTION_REFRESH_TAGS));
 

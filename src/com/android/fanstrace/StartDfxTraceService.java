@@ -47,7 +47,7 @@ public class StartDfxTraceService extends TraceService {
             LogUtils.i(TAG, "StartDfxTraceService does see a trace is starting.");
         }
 
-        prefs.edit().putBoolean(context.getString(R.string.pref_key_tracing_on), true).commit();
+        prefs.edit().putBoolean(context.getString(R.string.pref_key_dfx_tracing_on), true).commit();
         // context.sendBroadcast(new Intent(MainFragment.ACTION_REFRESH_TAGS));
         Set<String> activeAvailableTags = Receiver.getActiveTags(context, prefs, true);
         int bufferSize = 8192; // 暂时写死

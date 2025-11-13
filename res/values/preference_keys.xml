@@ -2,6 +2,7 @@
 
 <resources>
     <string name="pref_key_tracing_on">tracing_on</string>
+    <string name="pref_key_dfx_tracing_on">dfx_tracing_on</string>
     <string name="pref_key_tags">current_tags_5</string>
     <string name="pref_key_apps">all_apps</string>
     <string name="pref_key_buffer_size">buffer_size</string>

@@ -122,7 +122,7 @@ public class Receiver extends BroadcastReceiver {
                 }
                 TraceService.startDfxTracing(context, activeAvailableTags, 8192,
                         appTracing); // 开机同时自启fans与dfx
-                LogUtils.e(TAG, "Receive  updateTracing");
+                LogUtils.i(TAG, "Receive  updateTracing");
             } else {
                 if (TraceService.FANS_AUTO_START) {
                     TraceService.stopTracing(context);

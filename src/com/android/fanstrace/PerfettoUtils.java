@@ -22,9 +22,6 @@ import android.system.Os;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
@@ -67,11 +64,11 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
             String action) {
         if (isTracingOn(action)) {
-            LogUtils.e(TAG, "Attempting to start perfetto trace but trace is already in progress");
+            LogUtils.i(TAG, "Attempting to start perfetto trace but trace is already in progress");
             return 0;
         } else {
             // Ensure the temporary trace file is cleared.
-            LogUtils.e(TAG, "" + action);
+            LogUtils.i(TAG, action);
             if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)) {
                 try {
                     Files.deleteIfExists(Paths.get(TEMP_DFX_LOCATION));
@@ -241,7 +238,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             cmd = "perfetto --detach=" + PERFETTO_TAG + " -o " + TEMP_TRACE_LOCATION + " -c - --txt"
                     + " <<" + MARKER + "\n" + configString + "\n" + MARKER;
         }
-        LogUtils.e(TAG, "" + action);
+        LogUtils.i(TAG, action);
         LogUtils.v(TAG, "Starting perfetto trace.");
         try {
             Process process = (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action))
@@ -280,7 +277,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         } else {
             cmd = "perfetto --stop --attach=" + PERFETTO_TAG;
         }
-        LogUtils.e(TAG, "" + action);
+        LogUtils.i(TAG, action);
         try {
             Process process = TraceUtils.exec(cmd);
             if (process.waitFor() != 0) {
@@ -295,19 +292,10 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         File file = new File(filePath);
         if (file.exists() && file.isFile()) {
             double sizeInMB = file.length() / 1048576.0;
-            DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(Locale.US);
-            symbols.setDecimalSeparator('.');
-            DecimalFormat df = new DecimalFormat("#.##", symbols);
-            df.setGroupingUsed(false);
-            try {
-                return df.parse(df.format(sizeInMB)).doubleValue();
-            } catch (ParseException e) {
-                e.printStackTrace();
-                return -1;
-            }
-        } else {
-            return -1;
+            // 直接四舍五入到两位小数
+            return Math.round(sizeInMB * 100.0) / 100.0;
         }
+        return -1.0;
     }
 
     public boolean traceDump(File outFile, String action) {
@@ -337,49 +325,48 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             }
 
             LogUtils.i(TAG, "Saving perfetto trace to " + outFile);
-            SystemProperties.set("tr_trace.dfx_trace.dump_time", sdf.format(new Date()));
+            SystemProperties.set("tr_trace.fans_trace.dump_time", sdf.format(new Date()));
 
             try {
                 Os.rename(TEMP_TRACE_LOCATION, outFile.getCanonicalPath());
                 double fileSize = getFileSizeInMB(outFile.getCanonicalPath());
-                SystemProperties.set("tr_trace.dfx_trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
+                SystemProperties.set("tr_trace.fans_trace.dump_size_mb", String.format(Locale.US, "%.2f", fileSize));
                 LogUtils.i(TAG, "current fans trace size is " + fileSize + " MB");
             } catch (Exception e) {
                 LogUtils.e(TAG, "Trace dump failed: " + e.getMessage());
+                return false;
             }
         }
-        LogUtils.e(TAG, "" + action);
+        LogUtils.i(TAG, action);
         outFile.setReadable(true, false); // (readable, ownerOnly)
         outFile.setWritable(true, false); // (readable, ownerOnly)
         return true;
     }
 
     public boolean isTracingOn(String action) {
-        String cmd;
+        if (action == null) {
+            return isDetached(PERFETTO_TAG) || isDetached(PERFETTO_DFX_TAG);
+        }
+
+        String tag;
         if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)
                 || TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
-            cmd = "perfetto --is_detached=" + PERFETTO_DFX_TAG;
+            tag = PERFETTO_DFX_TAG;
         } else {
-            cmd = "perfetto --is_detached=" + PERFETTO_TAG;
+            tag = PERFETTO_TAG;
         }
-        LogUtils.e(TAG, "" + action);
+
+        return isDetached(tag);
+    }
+
+    private boolean isDetached(String tag) {
+        String cmd = "perfetto --is_detached=" + tag;
         try {
             Process process = TraceUtils.exec(cmd);
-
-            // 0 represents a detached process exists with this name
-            // 2 represents no detached process with this name
-            // 1 (or other error code) represents an error
             int result = process.waitFor();
-            if (result == 0) {
-                return true;
-            } else if (result == 2) {
-                return false;
-            } else {
-                LogUtils.e(TAG, "Perfetto error: " + result);
-                return false;
-            }
+            return result == 0;
         } catch (Exception e) {
-            LogUtils.e(TAG, "Perfetto tracingOn error:" + e.getMessage());
+            LogUtils.e(TAG, "Failed to check perfetto status for " + tag + ": " + e.getMessage());
             return false;
         }
     }
