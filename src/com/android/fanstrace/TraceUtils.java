@@ -126,7 +126,7 @@ public class TraceUtils {
     }
 
     public static File getOutputFile(String filename, boolean fansStop, String action) {
-        if (action == TraceService.INTENT_ACTION_DFX_STOP_TRACING) {
+        if (TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
             return new File(TraceUtils.DFX_TRACE_DIRECTORY, filename);
         } else {
             return new File(fansStop ? TraceUtils.FANS_TRACE_DIRECTORY : TraceUtils.TRACE_DIRECTORY,

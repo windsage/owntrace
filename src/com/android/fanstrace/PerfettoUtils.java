@@ -72,7 +72,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         } else {
             // Ensure the temporary trace file is cleared.
             LogUtils.e(TAG, "" + action);
-            if (action == TraceService.INTENT_ACTION_DFX_START_TRACING) {
+            if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)) {
                 try {
                     Files.deleteIfExists(Paths.get(TEMP_DFX_LOCATION));
                 } catch (Exception e) {
@@ -233,7 +233,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             return -1;
         }
         String cmd;
-        if (action == TraceService.INTENT_ACTION_DFX_START_TRACING) {
+        if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)) {
             cmd = "perfetto --detach=" + PERFETTO_DFX_TAG + " -o " + TEMP_DFX_LOCATION
                     + " -c - --txt"
                     + " <<" + MARKER + "\n" + configString + "\n" + MARKER;
@@ -244,7 +244,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         LogUtils.e(TAG, "" + action);
         LogUtils.v(TAG, "Starting perfetto trace.");
         try {
-            Process process = (action == TraceService.INTENT_ACTION_DFX_START_TRACING)
+            Process process = (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action))
                     ? TraceUtils.exec(cmd, TEMP_DFX_DIR)
                     : TraceUtils.exec(cmd, TEMP_DIR);
             // If we time out, ensure that the perfetto process is destroyed.
@@ -275,7 +275,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                     "No trace appears to be in progress. Stopping perfetto trace may not work.");
         }
         String cmd;
-        if (action == TraceService.INTENT_ACTION_DFX_STOP_TRACING) {
+        if (TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
             cmd = "perfetto --stop --attach=" + PERFETTO_DFX_TAG;
         } else {
             cmd = "perfetto --stop --attach=" + PERFETTO_TAG;
@@ -314,7 +314,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         traceStop(action);
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
         // Short-circuit if the file we're trying to dump to doesn't exist.
-        if (action == TraceService.INTENT_ACTION_DFX_STOP_TRACING) {
+        if (TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
             if (!Files.exists(Paths.get(TEMP_DFX_LOCATION))) {
                 LogUtils.e(TAG, "In-progress trace file doesn't exist, aborting trace dump.");
                 return false;
@@ -356,8 +356,8 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
 
     public boolean isTracingOn(String action) {
         String cmd;
-        if (action == TraceService.INTENT_ACTION_DFX_START_TRACING
-                || action == TraceService.INTENT_ACTION_DFX_STOP_TRACING) {
+        if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)
+                || TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
             cmd = "perfetto --is_detached=" + PERFETTO_DFX_TAG;
         } else {
             cmd = "perfetto --is_detached=" + PERFETTO_TAG;
