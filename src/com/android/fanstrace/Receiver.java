@@ -25,6 +25,7 @@ import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Build;
+import android.os.SystemClock;
 import android.util.ArraySet;
 
 import androidx.preference.PreferenceManager;
@@ -65,6 +66,19 @@ public class Receiver extends BroadcastReceiver {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+            long bootTime = SystemClock.elapsedRealtime();
+            long currentUptime = SystemClock.uptimeMillis();
+
+            LogUtils.i(TAG, "BOOT_COMPLETED received - bootTime: " + bootTime +
+                       ", uptime: " + currentUptime);
+
+            // important: 不知何故会在异常重启后收到开机广播
+            // 如果系统运行时间很长,说明这不是真正的开机
+            if (bootTime > 60000) {
+                LogUtils.w(TAG, "BOOT_COMPLETED received but system uptime is " +
+                           bootTime + "ms, ignoring as false boot signal");
+                return;  // 忽略这个虚假的开机广播
+            }
             if (TraceService.BOOT_START) {
                 createNotificationChannels(context);
 
@@ -97,6 +111,7 @@ public class Receiver extends BroadcastReceiver {
     public static void updateTracing(Context context) {
         updateTracing(context, false);
     }
+
     public static void updateTracing(Context context, boolean assumeTracingIsOff) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         boolean prefsTracingOn =
