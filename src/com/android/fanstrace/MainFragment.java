@@ -41,6 +41,7 @@ public class MainFragment extends PreferenceFragmentCompat {
     public static final String ACTION_REFRESH_TAGS = "com.android.fanstrace.REFRESH_TAGS";
 
     private SwitchPreferenceCompat mTracingOn;
+    private SwitchPreferenceCompat mDfxTracingOn;
     private MultiSelectListPreference mTags;
     private AlertDialog mAlertDialog;
     private SharedPreferences mPrefs;
@@ -52,10 +53,11 @@ public class MainFragment extends PreferenceFragmentCompat {
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        setPreferencesFromResource(R.xml.main, rootKey); // 关键修改点
+        setPreferencesFromResource(R.xml.main, rootKey);
 
         mPrefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
         mTracingOn = findPreference(getString(R.string.pref_key_tracing_on));
+        mDfxTracingOn = findPreference(getString(R.string.pref_key_dfx_tracing_on));
         mTags = findPreference(getString(R.string.pref_key_tags));
 
         initializePreferences();
@@ -66,7 +68,27 @@ public class MainFragment extends PreferenceFragmentCompat {
 
         // Tracing On 开关
         mTracingOn.setOnPreferenceClickListener(preference -> {
-            Receiver.updateTracing(context);
+            int enable = ((MainActivity) requireActivity()).getSwitch();
+            if (enable == 1) {
+                Receiver.updateTracing(context);
+            } else {
+                // Restore original state
+                mTracingOn.setChecked(!mTracingOn.isChecked());
+                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        });
+
+        // DFX Tracing On 开关
+        mDfxTracingOn.setOnPreferenceClickListener(preference -> {
+            int enable = ((MainActivity) requireActivity()).getSwitch();
+            if (enable == 1) {
+                Receiver.updateTracing(context);
+            } else {
+                // Restore original state
+                mDfxTracingOn.setChecked(!mDfxTracingOn.isChecked());
+                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show();
+            }
             return true;
         });
 
@@ -113,6 +135,11 @@ public class MainFragment extends PreferenceFragmentCompat {
 
         refreshUi();
 
+        // Set enable state based on permission immediately after initialization
+        int enable = ((MainActivity) requireActivity()).getSwitch();
+        mTracingOn.setEnabled(enable == 1);
+        mDfxTracingOn.setEnabled(enable == 1);
+
         mRefreshReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -130,14 +157,21 @@ public class MainFragment extends PreferenceFragmentCompat {
                 mRefreshReceiver,
                 new IntentFilter(ACTION_REFRESH_TAGS),
                 Context.RECEIVER_NOT_EXPORTED);
-        Receiver.updateTracing(getContext());
+
+        // Only update tracing if user has permission
+        int enable = ((MainActivity) requireActivity()).getSwitch();
+        if (enable == 1) {
+            Receiver.updateTracing(getContext());
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        // Refresh enable state in case it changed
         int enable = ((MainActivity) requireActivity()).getSwitch();
         mTracingOn.setEnabled(enable == 1);
+        mDfxTracingOn.setEnabled(enable == 1);
     }
 
     @Override
@@ -168,6 +202,10 @@ public class MainFragment extends PreferenceFragmentCompat {
         // Make sure the Record Trace toggle matches the preference value.
         mTracingOn.setChecked(mTracingOn.getPreferenceManager().getSharedPreferences().getBoolean(
                 mTracingOn.getKey(), false));
+
+        // Make sure the Record DFX Trace toggle matches the preference value.
+        mDfxTracingOn.setChecked(mDfxTracingOn.getPreferenceManager().getSharedPreferences().getBoolean(
+                mDfxTracingOn.getKey(), false));
 
         // Update category list to match the categories available on the system.
         Set<Entry<String, String>> availableTags = TraceUtils.listCategories().entrySet();

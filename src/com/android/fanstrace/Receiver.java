@@ -86,6 +86,7 @@ public class Receiver extends BroadcastReceiver {
                 // tracingIsOff argument to avoid the Perfetto check.
                 prefs.edit()
                         .putBoolean(context.getString(R.string.pref_key_tracing_on), true)
+                        .putBoolean(context.getString(R.string.pref_key_dfx_tracing_on), true)
                         .commit();
                 updateTracing(context, /* assumeTracingIsOff= */ true);
             }
@@ -114,34 +115,46 @@ public class Receiver extends BroadcastReceiver {
 
     public static void updateTracing(Context context, boolean assumeTracingIsOff) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean prefsTracingOn =
+        boolean prefsFansTracingOn =
                 prefs.getBoolean(context.getString(R.string.pref_key_tracing_on), false);
+        boolean prefsDfxTracingOn =
+                prefs.getBoolean(context.getString(R.string.pref_key_dfx_tracing_on), false);
 
-        boolean traceUtilsTracingOn = assumeTracingIsOff
+        boolean fansTracingOn = assumeTracingIsOff
                 ? false
-                : TraceUtils.isTracingOn(null); // 此处null为耦合fanstrace与DFX
+                : TraceUtils.isTracingOn(TraceService.INTENT_ACTION_FANS_START_TRACING);
+        boolean dfxTracingOn = assumeTracingIsOff
+                ? false
+                : TraceUtils.isTracingOn(TraceService.INTENT_ACTION_DFX_START_TRACING);
 
-        if (prefsTracingOn != traceUtilsTracingOn) {
-            if (prefsTracingOn) {
-                // Show notification if the tags in preferences are not all actually available.
+        // Handle FANS trace
+        if (prefsFansTracingOn != fansTracingOn) {
+            if (prefsFansTracingOn) {
                 Set<String> activeAvailableTags = getActiveTags(context, prefs, true);
                 int bufferSize = Integer.parseInt(
                         prefs.getString(context.getString(R.string.pref_key_buffer_size),
                                 context.getString(R.string.default_buffer_size)));
-
                 boolean appTracing =
                         prefs.getBoolean(context.getString(R.string.pref_key_apps), false);
 
                 if (TraceService.FANS_AUTO_START) {
                     TraceService.startTracing(context, activeAvailableTags, bufferSize, appTracing);
                 }
-                TraceService.startDfxTracing(context, activeAvailableTags, 8192,
-                        appTracing); // 开机同时自启fans与dfx
-                LogUtils.i(TAG, "Receive  updateTracing");
             } else {
                 if (TraceService.FANS_AUTO_START) {
                     TraceService.stopTracing(context);
                 }
+            }
+        }
+
+        // Handle DFX trace
+        if (prefsDfxTracingOn != dfxTracingOn) {
+            if (prefsDfxTracingOn) {
+                Set<String> activeAvailableTags = getActiveTags(context, prefs, true);
+                boolean appTracing =
+                        prefs.getBoolean(context.getString(R.string.pref_key_apps), false);
+                TraceService.startDfxTracing(context, activeAvailableTags, 8192, appTracing);
+            } else {
                 TraceService.stopDfxTracing(context);
             }
         }

@@ -55,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        mSwitchEnable = 0;
         finish();
     }
     public int getSwitch() {

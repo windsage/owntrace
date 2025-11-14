@@ -20,6 +20,9 @@
         android:key="@string/pref_key_tracing_on"
         android:title="@string/record_trace" />
     <androidx.preference.SwitchPreferenceCompat
+        android:key="@string/pref_key_dfx_tracing_on"
+        android:title="@string/record_dfx_trace" />
+    <androidx.preference.SwitchPreferenceCompat
         android:key="@string/pref_key_apps"
         android:title="@string/trace_debuggable_applications"
         android:defaultValue="false" />
