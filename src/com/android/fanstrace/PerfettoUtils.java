@@ -16,9 +16,6 @@
 
 package com.android.fanstrace;
 
-import android.os.SystemProperties;
-import android.system.Os;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -27,7 +24,10 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+
 import android.os.Build;
+import android.os.SystemProperties;
+import android.system.Os;
 /**
  * Utility functions for calling Perfetto
  */
@@ -58,19 +58,25 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         return OUTPUT_EXTENSION;
     }
 
-    public int traceStart(Collection<String> tags, int bufferSizeKb, boolean apps,
-                          boolean longTrace, int maxLongTraceSizeMb, int maxLongTraceDurationMinutes,
+    public int traceStart(Collection<String> tags,
+                          int bufferSizeKb,
+                          boolean apps,
+                          boolean longTrace,
+                          int maxLongTraceSizeMb,
+                          int maxLongTraceDurationMinutes,
                           String action) {
         // Ensure the temporary trace file is cleared.
         LogUtils.i(TAG, action);
         String tempFile = TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)
-                ? TEMP_DFX_LOCATION : TEMP_TRACE_LOCATION;
+                                  ? TEMP_DFX_LOCATION
+                                  : TEMP_TRACE_LOCATION;
         File file = new File(tempFile);
         if (file.exists()) {
             // 理论上不应该走到这里
             long fileSize = file.length();
-            LogUtils.w(TAG, "Unexpected: temp file still exists (size=" + fileSize +
-                    "), deleting as fallback");
+            LogUtils.w(TAG,
+                       "Unexpected: temp file still exists (size=" + fileSize +
+                               "), deleting as fallback");
             // 确保删除旧文件
             try {
                 Files.deleteIfExists(Paths.get(tempFile));
@@ -182,7 +188,8 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                 .append("  config {\n")
                 .append("    name: \"android.surfaceflinger.frametimeline\"\n")
                 .append("    target_buffer: 0\n")
-                .append("  }\n").append("} \n");
+                .append("  }\n")
+                .append("} \n");
 
         if (tags.contains(POWER_TAG)) {
             config.append("data_sources: {\n")
@@ -226,22 +233,23 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         }
         String cmd;
         if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)) {
-            cmd = "perfetto --detach=" + PERFETTO_DFX_TAG + " -o " + TEMP_DFX_LOCATION
-                    + " -c - --txt"
-                    + " <<" + MARKER + "\n" + configString + "\n" + MARKER;
+            cmd = "perfetto --detach=" + PERFETTO_DFX_TAG + " -o " + TEMP_DFX_LOCATION +
+                  " -c - --txt"
+                  + " <<" + MARKER + "\n" + configString + "\n" + MARKER;
         } else {
             cmd = "perfetto --detach=" + PERFETTO_TAG + " -o " + TEMP_TRACE_LOCATION + " -c - --txt"
-                    + " <<" + MARKER + "\n" + configString + "\n" + MARKER;
+                  + " <<" + MARKER + "\n" + configString + "\n" + MARKER;
         }
         LogUtils.i(TAG, action);
         try {
             Process process = (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action))
-                    ? TraceUtils.exec(cmd, TEMP_DFX_DIR)
-                    : TraceUtils.exec(cmd, TEMP_DIR);
+                                      ? TraceUtils.exec(cmd, TEMP_DFX_DIR)
+                                      : TraceUtils.exec(cmd, TEMP_DIR);
             // If we time out, ensure that the perfetto process is destroyed.
             if (!process.waitFor(STARTUP_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
                 LogUtils.e(TAG,
-                        "perfetto traceStart has timed out after " + STARTUP_TIMEOUT_MS + " ms.");
+                           "perfetto traceStart has timed out after " + STARTUP_TIMEOUT_MS +
+                                   " ms.");
                 process.destroyForcibly();
                 return -1;
             }
@@ -263,7 +271,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
 
         if (!isTracingOn(action)) {
             LogUtils.i(TAG,
-                    "No trace appears to be in progress. Stopping perfetto trace may not work.");
+                       "No trace appears to be in progress. Stopping perfetto trace may not work.");
         }
         String cmd;
         if (TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
@@ -297,7 +305,8 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
         String tempFile = TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)
-                ? TEMP_DFX_LOCATION : TEMP_TRACE_LOCATION;
+                                  ? TEMP_DFX_LOCATION
+                                  : TEMP_TRACE_LOCATION;
 
         // === 等待文件就绪 ===
         if (!TraceUtils.TraceStateChecker.waitForTraceFile(tempFile, 10000)) {
@@ -313,7 +322,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                 Os.rename(TEMP_DFX_LOCATION, outFile.getCanonicalPath());
                 double fileSize = getFileSizeInMB(outFile.getCanonicalPath());
                 SystemProperties.set("tr_trace.dfx_trace.dump_size_mb",
-                        String.format(Locale.US, "%.2f", fileSize));
+                                     String.format(Locale.US, "%.2f", fileSize));
                 LogUtils.i(TAG, "current dfx trace size is " + fileSize + " MB");
             } catch (Exception e) {
                 LogUtils.e(TAG, "Trace dump failed: " + e.getMessage());
@@ -327,7 +336,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                 Os.rename(TEMP_TRACE_LOCATION, outFile.getCanonicalPath());
                 double fileSize = getFileSizeInMB(outFile.getCanonicalPath());
                 SystemProperties.set("tr_trace.fans_trace.dump_size_mb",
-                        String.format(Locale.US, "%.2f", fileSize));
+                                     String.format(Locale.US, "%.2f", fileSize));
                 LogUtils.i(TAG, "current fans trace size is " + fileSize + " MB");
             } catch (Exception e) {
                 LogUtils.e(TAG, "Trace dump failed: " + e.getMessage());
@@ -347,8 +356,8 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
         }
 
         String tag;
-        if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action)
-                || TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
+        if (TraceService.INTENT_ACTION_DFX_START_TRACING.equals(action) ||
+            TraceService.INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
             tag = PERFETTO_DFX_TAG;
         } else {
             tag = PERFETTO_TAG;

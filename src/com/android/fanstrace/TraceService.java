@@ -16,6 +16,10 @@
 
 package com.android.fanstrace;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -28,10 +32,6 @@ import android.os.SystemProperties;
 import android.text.format.DateUtils;
 
 import androidx.preference.PreferenceManager;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
 
 public class TraceService extends IntentService {
     protected static String INTENT_ACTION_FANS_STOP_TRACING =
@@ -52,6 +52,8 @@ public class TraceService extends IntentService {
     private static int TRACE_NOTIFICATION = 1;
     private static int SAVING_TRACE_NOTIFICATION = 2;
 
+    // Default dfx trace buffer size
+    static final int DEFAULT_DFX_BUFFER_SIZE = 8192;
     private static final int MIN_KEEP_COUNT = 1;
     private static final long MIN_KEEP_AGE = 2 * DateUtils.DAY_IN_MILLIS;
     // Threshold: 7.0GB in bytes (7.0 * 1024 * 1024 * 1024)
@@ -95,11 +97,11 @@ public class TraceService extends IntentService {
         // Check total RAM
         try {
             android.app.ActivityManager activityManager =
-                (android.app.ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                    (android.app.ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
 
             if (activityManager != null) {
                 android.app.ActivityManager.MemoryInfo memInfo =
-                    new android.app.ActivityManager.MemoryInfo();
+                        new android.app.ActivityManager.MemoryInfo();
                 activityManager.getMemoryInfo(memInfo);
                 long totalRam = memInfo.totalMem;  // in bytes
 
@@ -107,9 +109,12 @@ public class TraceService extends IntentService {
                 double totalRamGB = totalRam / (1024.0 * 1024.0 * 1024.0);
 
                 boolean shouldStart = totalRam >= RAM_THRESHOLD_BYTES;
-                LogUtils.i(TraceUtils.TAG, String.format(java.util.Locale.US,
-                        "Device RAM: %.2f GB, Threshold: 7.0 GB, FANS_AUTO_START: %b",
-                        totalRamGB, shouldStart));
+                LogUtils.i(
+                        TraceUtils.TAG,
+                        String.format(java.util.Locale.US,
+                                      "Device RAM: %.2f GB, Threshold: 7.0 GB, FANS_AUTO_START: %b",
+                                      totalRamGB,
+                                      shouldStart));
 
                 return shouldStart;
             }
@@ -121,8 +126,10 @@ public class TraceService extends IntentService {
         return true;
     }
 
-    public static void startTracing(
-            final Context context, Collection<String> tags, int bufferSizeKb, boolean apps) {
+    public static void startTracing(final Context context,
+                                    Collection<String> tags,
+                                    int bufferSizeKb,
+                                    boolean apps) {
         Intent intent = new Intent(context, TraceService.class);
         intent.setAction(INTENT_ACTION_FANS_START_TRACING);
         intent.putExtra(INTENT_EXTRA_TAGS, new ArrayList(tags));
@@ -131,12 +138,14 @@ public class TraceService extends IntentService {
         context.startForegroundService(intent);
     }
 
-    public static void startDfxTracing(
-            final Context context, Collection<String> tags, int bufferSizeKb, boolean apps) {
+    public static void startDfxTracing(final Context context,
+                                       Collection<String> tags,
+                                       int bufferSizeKb,
+                                       boolean apps) {
         Intent intent = new Intent(context, TraceService.class);
         intent.setAction(INTENT_ACTION_DFX_START_TRACING);
         intent.putExtra(INTENT_EXTRA_TAGS, new ArrayList(tags));
-        intent.putExtra(INTENT_EXTRA_BUFFER, bufferSizeKb); // receiver调用处写死启动缓冲区大小
+        intent.putExtra(INTENT_EXTRA_BUFFER, bufferSizeKb);  // receiver调用处写死启动缓冲区大小
         intent.putExtra(INTENT_EXTRA_APPS, apps);
         context.startForegroundService(intent);
     }
@@ -162,173 +171,149 @@ public class TraceService extends IntentService {
         setIntentRedelivery(true);
     }
 
+    /**
+     * Internal method to stop tracing and save trace file
+     *
+     * @param outputFilename The output file name
+     * @param forceStop Whether this is a forced stop
+     * @param action The action type (INTENT_ACTION_FANS_STOP_TRACING or
+     *         INTENT_ACTION_DFX_STOP_TRACING)
+     */
+    private void stopTracingInternal(String outputFilename, boolean forceStop, String action) {
+        Context context = getApplicationContext();
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+
+        // Create saving notification
+        Notification.Builder notification =
+                new Notification.Builder(this, Receiver.NOTIFICATION_CHANNEL_OTHER)
+                        .setSmallIcon(R.drawable.bugfood_icon)
+                        .setContentTitle(getString(R.string.saving_trace))
+                        .setTicker(getString(R.string.saving_trace))
+                        .setLocalOnly(true)
+                        .setProgress(1, 0, true)
+                        .setColor(getColor(
+                                com.android.internal.R.color.system_notification_accent_color));
+
+        startForeground(SAVING_TRACE_NOTIFICATION, notification.build());
+        notificationManager.cancel(TRACE_NOTIFICATION);
+
+        // Get output file based on action type
+        File file = TraceUtils.getOutputFile(outputFilename, forceStop, action);
+
+        // Dump trace and set system properties
+        if (TraceUtils.traceDump(file, action)) {
+            // Determine property keys based on action
+            String traceNameProperty;
+            if (INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
+                traceNameProperty = "tr_trace.dfx_trace.trace_name";
+            } else {
+                traceNameProperty = "tr_trace.fans_trace.trace_name";
+            }
+
+            // Set trace name property
+            SystemProperties.set(traceNameProperty, "");
+            if (forceStop) {
+                SystemProperties.set(traceNameProperty, outputFilename);
+            }
+        }
+
+        stopForeground(Service.STOP_FOREGROUND_REMOVE);
+        TraceUtils.cleanupOlderFiles(MIN_KEEP_COUNT, MIN_KEEP_AGE);
+    }
+
+    /**
+     * Internal method to start tracing with notification
+     *
+     * @param tags The trace tags to enable
+     * @param bufferSizeKb Buffer size in KB
+     * @param appTracing Whether to enable app tracing
+     * @param action The action type (INTENT_ACTION_FANS_START_TRACING or
+     *         INTENT_ACTION_DFX_START_TRACING)
+     */
+    private void startTracingInternal(Collection<String> tags,
+                                      int bufferSizeKb,
+                                      boolean appTracing,
+                                      String action) {
+        Context context = getApplicationContext();
+
+        // Determine notification intent and preference key based on action
+        Intent stopIntent;
+        String prefKey;
+
+        if (INTENT_ACTION_DFX_START_TRACING.equals(action)) {
+            stopIntent = new Intent(Receiver.DFX_STOP_ACTION, null, context, Receiver.class);
+            prefKey = context.getString(R.string.pref_key_dfx_tracing_on);
+        } else {
+            stopIntent = new Intent(Receiver.STOP_ACTION, null, context, Receiver.class);
+            prefKey = context.getString(R.string.pref_key_tracing_on);
+        }
+
+        stopIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+
+        String title = context.getString(R.string.trace_is_being_recorded);
+        String msg = context.getString(R.string.tap_to_stop_tracing);
+
+        Notification.Builder notification =
+                new Notification.Builder(context, Receiver.NOTIFICATION_CHANNEL_TRACING)
+                        .setSmallIcon(R.drawable.bugfood_icon)
+                        .setContentTitle(title)
+                        .setTicker(title)
+                        .setContentText(msg)
+                        .setContentIntent(PendingIntent.getBroadcast(
+                                context, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE))
+                        .setOngoing(true)
+                        .setLocalOnly(true)
+                        .setColor(getColor(
+                                com.android.internal.R.color.system_notification_accent_color));
+
+        startForeground(TRACE_NOTIFICATION,
+                        notification.build(),
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+
+        // Start tracing
+        int ret = TraceUtils.traceStart(tags, bufferSizeKb, appTracing, false, 0, 0, action);
+
+        if (ret == 1) {
+            // Trace started successfully
+            stopForeground(Service.STOP_FOREGROUND_DETACH);
+        } else if (ret == -1) {
+            // Starting the trace was unsuccessful, ensure tracing is stopped
+            TraceUtils.traceStop(action);
+            PreferenceManager.getDefaultSharedPreferences(context)
+                    .edit()
+                    .putBoolean(prefKey, false)
+                    .commit();
+            stopForeground(Service.STOP_FOREGROUND_REMOVE);
+        } else if (ret == 0) {
+            // Nothing to do
+        }
+    }
+
     @Override
     public void onHandleIntent(Intent intent) {
         Context context = getApplicationContext();
+        String action = intent.getAction();
 
-        if (intent.getAction().equals(INTENT_ACTION_FANS_STOP_TRACING)) {
-            stopTracingInternal(
-                    TraceUtils.getOutputFilename(INTENT_ACTION_FANS_STOP_TRACING), true);
-        } else if (intent.getAction().equals(INTENT_ACTION_FANS_START_TRACING)) {
+        if (INTENT_ACTION_FANS_STOP_TRACING.equals(action)) {
+            stopTracingInternal(TraceUtils.getOutputFilename(INTENT_ACTION_FANS_STOP_TRACING),
+                                true,
+                                INTENT_ACTION_FANS_STOP_TRACING);
+        } else if (INTENT_ACTION_FANS_START_TRACING.equals(action)) {
             startTracingInternal(intent.getStringArrayListExtra(INTENT_EXTRA_TAGS),
-                    intent.getIntExtra(INTENT_EXTRA_BUFFER,
-                            Integer.parseInt(context.getString(R.string.default_buffer_size))),
-                    intent.getBooleanExtra(INTENT_EXTRA_APPS, false));
-        } else if (intent.getAction().equals(INTENT_ACTION_DFX_STOP_TRACING)) {
-            stopDfxTracingInternal(
-                    TraceUtils.getOutputFilename(INTENT_ACTION_DFX_STOP_TRACING), true);
-        } else if (intent.getAction().equals(INTENT_ACTION_DFX_START_TRACING)) {
-            startDfxTracingInternal(intent.getStringArrayListExtra(INTENT_EXTRA_TAGS),
-                    8192, // 暂时写死DFX默认buffer
-                    intent.getBooleanExtra(INTENT_EXTRA_APPS, false));
+                                 intent.getIntExtra(INTENT_EXTRA_BUFFER,
+                                                    Integer.parseInt(context.getString(
+                                                            R.string.default_buffer_size))),
+                                 intent.getBooleanExtra(INTENT_EXTRA_APPS, false),
+                                 INTENT_ACTION_FANS_START_TRACING);
+        } else if (INTENT_ACTION_DFX_STOP_TRACING.equals(action)) {
+            stopTracingInternal(TraceUtils.getOutputFilename(INTENT_ACTION_DFX_STOP_TRACING),
+                                true,
+                                INTENT_ACTION_DFX_STOP_TRACING);
+        } else if (INTENT_ACTION_DFX_START_TRACING.equals(action)) {
+            startTracingInternal(intent.getStringArrayListExtra(INTENT_EXTRA_TAGS),
+                                 DEFAULT_DFX_BUFFER_SIZE,  // DFX fixed buffer size
+                                 intent.getBooleanExtra(INTENT_EXTRA_APPS, false),
+                                 INTENT_ACTION_DFX_START_TRACING);
         }
-    }
-
-    private void startTracingInternal(
-            Collection<String> tags, int bufferSizeKb, boolean appTracing) {
-        Context context = getApplicationContext();
-        Intent stopIntent = new Intent(Receiver.STOP_ACTION, null, context, Receiver.class);
-        stopIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-
-        String title = context.getString(R.string.trace_is_being_recorded);
-        String msg = context.getString(R.string.tap_to_stop_tracing);
-
-        Notification.Builder notification =
-                new Notification.Builder(context, Receiver.NOTIFICATION_CHANNEL_TRACING)
-                        .setSmallIcon(R.drawable.bugfood_icon)
-                        .setContentTitle(title)
-                        .setTicker(title)
-                        .setContentText(msg)
-                        .setContentIntent(PendingIntent.getBroadcast(context, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE))
-                        .setOngoing(true)
-                        .setLocalOnly(true)
-                        .setColor(getColor(
-                                com.android.internal.R.color.system_notification_accent_color));
-
-        startForeground(TRACE_NOTIFICATION, notification.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-        int ret = TraceUtils.traceStart(
-                tags, bufferSizeKb, appTracing, false, 0, 0, INTENT_ACTION_FANS_START_TRACING);
-        if (ret == 1) {
-            stopForeground(Service.STOP_FOREGROUND_DETACH);
-        } else if (ret == -1) {
-            // Starting the trace was unsuccessful, so ensure that tracing
-            // is stopped and the preference is reset.
-            TraceUtils.traceStop(INTENT_ACTION_FANS_START_TRACING);
-            PreferenceManager.getDefaultSharedPreferences(context)
-                    .edit()
-                    .putBoolean(context.getString(R.string.pref_key_tracing_on), false)
-                    .commit();
-            stopForeground(Service.STOP_FOREGROUND_REMOVE);
-        } else if (ret == 0) {
-            // Nothing do
-        }
-    }
-
-    private void stopTracingInternal(String outputFilename, boolean forceStop) {
-        Context context = getApplicationContext();
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-
-        Notification.Builder notification =
-                new Notification.Builder(this, Receiver.NOTIFICATION_CHANNEL_OTHER)
-                        .setSmallIcon(R.drawable.bugfood_icon)
-                        .setContentTitle(getString(R.string.saving_trace))
-                        .setTicker(getString(R.string.saving_trace))
-                        .setLocalOnly(true)
-                        .setProgress(1, 0, true)
-                        .setColor(getColor(
-                                com.android.internal.R.color.system_notification_accent_color));
-
-        startForeground(SAVING_TRACE_NOTIFICATION, notification.build());
-
-        notificationManager.cancel(TRACE_NOTIFICATION);
-
-        File file = TraceUtils.getOutputFile(
-                outputFilename, forceStop, INTENT_ACTION_FANS_STOP_TRACING);
-
-        if (TraceUtils.traceDump(file, INTENT_ACTION_FANS_STOP_TRACING)) {
-            SystemProperties.set("tr_trace.fans_trace.trace_name", "");
-            if (forceStop) {
-                SystemProperties.set("tr_trace.fans_trace.trace_name", outputFilename);
-            }
-        }
-
-        stopForeground(Service.STOP_FOREGROUND_REMOVE);
-
-        TraceUtils.cleanupOlderFiles(MIN_KEEP_COUNT, MIN_KEEP_AGE);
-    }
-
-    // SPD: add for jobService for fanstrace by zhanwei.bai at 20210624 end
-    private void startDfxTracingInternal(
-            Collection<String> tags, int bufferSizeKb, boolean appTracing) {
-        Context context = getApplicationContext();
-        Intent stopIntent = new Intent(Receiver.DFX_STOP_ACTION, null, context,
-                Receiver.class); // 判断DFX和fans不同的ACTION
-        stopIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-
-        String title = context.getString(R.string.trace_is_being_recorded);
-        String msg = context.getString(R.string.tap_to_stop_tracing);
-
-        Notification.Builder notification =
-                new Notification.Builder(context, Receiver.NOTIFICATION_CHANNEL_TRACING)
-                        .setSmallIcon(R.drawable.bugfood_icon)
-                        .setContentTitle(title)
-                        .setTicker(title)
-                        .setContentText(msg)
-                        .setContentIntent(PendingIntent.getBroadcast(context, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE))
-                        .setOngoing(true)
-                        .setLocalOnly(true)
-                        .setColor(getColor(
-                                com.android.internal.R.color.system_notification_accent_color));
-
-        startForeground(TRACE_NOTIFICATION, notification.build());
-        int ret = TraceUtils.traceStart(tags, bufferSizeKb, appTracing, false, 0, 0,
-                INTENT_ACTION_DFX_START_TRACING); // 传值时buffer已经被固定到1000
-        if (ret == 1) {
-            stopForeground(Service.STOP_FOREGROUND_DETACH);
-        } else if (ret == -1) {
-            // Starting the trace was unsuccessful, so ensure that tracing
-            // is stopped and the preference is reset.
-            TraceUtils.traceStop(INTENT_ACTION_DFX_STOP_TRACING);
-            PreferenceManager.getDefaultSharedPreferences(context)
-                    .edit()
-                    .putBoolean(context.getString(R.string.pref_key_tracing_on), false)
-                    .commit();
-            stopForeground(Service.STOP_FOREGROUND_REMOVE);
-        } else if (ret == 0) {
-            // Nothing do
-        }
-    }
-
-    private void stopDfxTracingInternal(String outputFilename, boolean forceStop) {
-        Context context = getApplicationContext();
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-
-        Notification.Builder notification =
-                new Notification.Builder(this, Receiver.NOTIFICATION_CHANNEL_OTHER)
-                        .setSmallIcon(R.drawable.bugfood_icon)
-                        .setContentTitle(getString(R.string.saving_trace))
-                        .setTicker(getString(R.string.saving_trace))
-                        .setLocalOnly(true)
-                        .setProgress(1, 0, true)
-                        .setColor(getColor(
-                                com.android.internal.R.color.system_notification_accent_color));
-
-        startForeground(SAVING_TRACE_NOTIFICATION, notification.build());
-
-        notificationManager.cancel(TRACE_NOTIFICATION);
-
-        File file =
-                TraceUtils.getOutputFile(outputFilename, forceStop, INTENT_ACTION_DFX_STOP_TRACING);
-
-        if (TraceUtils.traceDump(file, INTENT_ACTION_DFX_STOP_TRACING)) {
-            SystemProperties.set("tr_trace.dfx_trace.trace_name", "");
-            if (forceStop) {
-                SystemProperties.set("tr_trace.dfx_trace.trace_name", outputFilename);
-            }
-        }
-
-        stopForeground(Service.STOP_FOREGROUND_REMOVE);
-
-        TraceUtils.cleanupOlderFiles(MIN_KEEP_COUNT, MIN_KEEP_AGE);
     }
 }

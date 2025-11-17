@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
@@ -160,8 +162,27 @@ public class TraceUtils {
         if (files == null) {
             return false;
         }
+        // 过滤掉临时trace文件和子目录
+        List<File> validFiles = new ArrayList<>();
+        for (File file : files) {
+            // 跳过目录
+            if (file.isDirectory()) {
+                continue;
+            }
+
+            // 跳过临时trace文件(正在运行中的trace)
+            String name = file.getName();
+            if (name.equals(".fans_trace-in-progress.trace") ||
+                name.equals(".DFX_trace-in-progress.trace")) {
+                LogUtils.i(TAG, "Skipping active trace file: " + name);
+                continue;
+            }
+
+            validFiles.add(file);
+        }
+        File[] filesToCheck = validFiles.toArray(new File[0]);
         // Sort with newest files first
-        Arrays.sort(files, new Comparator<File>() {
+        Arrays.sort(filesToCheck, new Comparator<File>() {
             @Override
             public int compare(File lhs, File rhs) {
                 return Long.compare(rhs.lastModified(), lhs.lastModified());
@@ -170,8 +191,8 @@ public class TraceUtils {
 
         // Keep at least minCount files
         boolean deleted = false;
-        for (int i = minCount; i < files.length; i++) {
-            final File file = files[i];
+        for (int i = minCount; i < filesToCheck.length; i++) {
+            final File file = filesToCheck[i];
 
             // Keep files newer than minAgeMs
             final long age = System.currentTimeMillis() - file.lastModified();
@@ -321,7 +342,7 @@ public class TraceUtils {
                 LogUtils.w(TAG, "ABNORMAL: orphan file exists");
                 LogUtils.w(TAG, "File: size=" + fileSize + " bytes, age=" + fileAge + "ms");
 
-                // === 关键判断: 根据文件大小区分场景 ===
+                // === 根据文件大小区分场景 ===
 
                 if (fileSize == 0) {
                     // 场景4a: 空文件 - perfetto异常退出,没有执行stop

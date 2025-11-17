@@ -154,7 +154,7 @@ public class Receiver extends BroadcastReceiver {
                 Set<String> activeAvailableTags = getActiveTags(context, prefs, true);
                 boolean appTracing =
                         prefs.getBoolean(context.getString(R.string.pref_key_apps), false);
-                TraceService.startDfxTracing(context, activeAvailableTags, 8192, appTracing);
+                TraceService.startDfxTracing(context, activeAvailableTags, TraceService.DEFAULT_DFX_BUFFER_SIZE, appTracing);
             } else {
                 TraceService.stopDfxTracing(context);
             }

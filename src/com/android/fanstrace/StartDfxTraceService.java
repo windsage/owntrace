@@ -53,11 +53,10 @@ public class StartDfxTraceService extends TraceService {
         prefs.edit().putBoolean(context.getString(R.string.pref_key_dfx_tracing_on), true).commit();
         // context.sendBroadcast(new Intent(MainFragment.ACTION_REFRESH_TAGS));
         Set<String> activeAvailableTags = Receiver.getActiveTags(context, prefs, true);
-        int bufferSize = 8192; // 暂时写死
         boolean appTracing = prefs.getBoolean(context.getString(R.string.pref_key_apps), true);
         intent.setAction(INTENT_ACTION_DFX_START_TRACING);
         intent.putExtra(INTENT_EXTRA_TAGS, new ArrayList(activeAvailableTags));
-        intent.putExtra(INTENT_EXTRA_BUFFER, bufferSize);
+        intent.putExtra(INTENT_EXTRA_BUFFER, DEFAULT_DFX_BUFFER_SIZE);
         intent.putExtra(INTENT_EXTRA_APPS, appTracing);
         super.onHandleIntent(intent);
     }
