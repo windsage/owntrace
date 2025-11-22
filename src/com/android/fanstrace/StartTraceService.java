@@ -38,6 +38,7 @@ public class StartTraceService extends TraceService {
      */
     @Override
     public void onHandleIntent(Intent intent) {
+        ensureForegroundStarted(NotificationType.TRACE_RECORDING);
         Context context = getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         // If the user thinks tracing is off and the trace processor agrees, we have no work to do.
@@ -45,6 +46,7 @@ public class StartTraceService extends TraceService {
         if (!TraceUtils.TraceStateChecker.shouldStartTrace(INTENT_ACTION_FANS_START_TRACING)) {
             LogUtils.i(TAG, "StartTraceService: trace already running, skip start");
             prefs.edit().putBoolean(context.getString(R.string.pref_key_tracing_on), true).commit();
+            cleanupPlaceholderNotification(NotificationType.TRACE_RECORDING);
             return;  // 直接返回
         }
 
