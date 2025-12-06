@@ -297,6 +297,8 @@ public class TraceService extends IntentService {
             nm.cancel(SAVING_TRACE_NOTIFICATION);
             nm.cancel(TRACE_NOTIFICATION);
             break;
+        default:
+            break;
         }
 
         // Remove foreground service status

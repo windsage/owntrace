@@ -113,6 +113,11 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
                 .append("  size_kb: 2048\n")
                 .append("  fill_policy: RING_BUFFER\n")
                 .append("} \n")
+                .append("producers {\n")
+                .append("  producer_name: \"traced_probes\"\n")
+                .append("  shm_size_kb: 32768\n")
+                .append("  page_size_kb: 32\n")
+                .append("} \n")
                 .append("data_sources {\n")
                 .append("  config {\n")
                 .append("    name: \"linux.ftrace\"\n")
@@ -150,7 +155,7 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             // config.append("      ftrace_events: \"raw_syscalls/sys_exit\"\n");
             // Temporarily used by the storage analysis at Jan 8th, 2025 start
             config.append("      ftrace_events: \"block/block_rq_insert\"\n");
-            if (Build.PRODUCT.contains("X6879") || bufferSizeKb != 8192) {
+            if (Build.PRODUCT.contains("X6879") || Build.PRODUCT.contains("CN5") || Build.PRODUCT.contains("X6878") || bufferSizeKb != 8192) {
                 config.append("      ftrace_events: \"block/block_rq_issue\"\n");
                 config.append("      ftrace_events: \"block/block_rq_complete\"\n");
             }
