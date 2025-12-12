@@ -167,11 +167,27 @@ public class AtraceUtils implements TraceUtils.TraceEngine {
             TreeMap<String, String> result = new TreeMap<>();
             String line;
             while ((line = stdout.readLine()) != null) {
+                LogUtils.d(TAG, "Parsing line: [" + line + "]");
                 String[] fields = line.trim().split(" - ", 2);
                 if (fields.length == 2) {
                     result.put(fields[0], fields[1]);
+                    LogUtils.d(TAG, "  -> Parsed: " + fields[0]);
+                } else {
+                    LogUtils.d(TAG, "  -> Failed to parse, fields.length=" + fields.length);
                 }
             }
+            // ========== PATCH START: Fix for missing binder_driver and memreclaim ==========
+            // FIXME: Temporary workaround for parsing issue where some categories are missing
+            // TODO: Investigate root cause and fix parsing logic properly
+            if (!result.containsKey("binder_driver")) {
+                result.put("binder_driver", "Binder Kernel driver");
+                LogUtils.w(TAG, "PATCH: Added missing category 'binder_driver'");
+            }
+            if (!result.containsKey("memreclaim")) {
+                result.put("memreclaim", "Kernel Memory Reclaim");
+                LogUtils.w(TAG, "PATCH: Added missing category 'memreclaim'");
+            }
+            // ========== PATCH END ==========
             return result;
         } catch (Exception e) {
             throw new RuntimeException(e);

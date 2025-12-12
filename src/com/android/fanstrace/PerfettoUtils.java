@@ -155,10 +155,8 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             // config.append("      ftrace_events: \"raw_syscalls/sys_exit\"\n");
             // Temporarily used by the storage analysis at Jan 8th, 2025 start
             config.append("      ftrace_events: \"block/block_rq_insert\"\n");
-            if (Build.PRODUCT.contains("X6879") || Build.PRODUCT.contains("CN5") || Build.PRODUCT.contains("X6878") || bufferSizeKb != 8192) {
-                config.append("      ftrace_events: \"block/block_rq_issue\"\n");
-                config.append("      ftrace_events: \"block/block_rq_complete\"\n");
-            }
+            config.append("      ftrace_events: \"block/block_rq_issue\"\n");
+            config.append("      ftrace_events: \"block/block_rq_complete\"\n");
             // Temporarily used by the storage analysis at Jan 8th, 2025 end
             config.append("      ftrace_events: \"sched/sched_blocked_reason\"\n");
             config.append("      ftrace_events: \"trans_sched/dump_info\"\n");
