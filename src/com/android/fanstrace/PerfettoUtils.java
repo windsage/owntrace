@@ -147,6 +147,8 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             // config.append("      ftrace_events: \"sched/sched_wakeup_new\"\n");
             config.append("      ftrace_events: \"power/cpu_frequency\"\n");
             config.append("      ftrace_events: \"kgsl/gpu_frequency\"\n");
+            config.append("      ftrace_events: \"gpu_mem/gpu_mem_total\"\n");
+            config.append("      ftrace_events: \"power/gpu_work_period\"\n");
             config.append("      ftrace_events: \"power/gpu_frequency\"\n");
             config.append("      ftrace_events: \"power/cpu_frequency_limits\"\n");
             // config.append("      ftrace_events: \"power/cpu_idle\"\n");
