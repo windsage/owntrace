@@ -199,7 +199,8 @@ public class TraceService extends IntentService {
                                 com.android.internal.R.color.system_notification_accent_color));
 
         if (isPlaceholder) {
-            builder.setContentTitle(getString(R.string.trace_is_being_recorded));
+            builder.setContentTitle(getString(R.string.trace_is_being_recorded))
+                    .setContentText(getString(R.string.stop_tracing));
         } else {
             String title = context.getString(R.string.trace_is_being_recorded);
             String msg = context.getString(R.string.tap_to_stop_tracing);
@@ -237,7 +238,8 @@ public class TraceService extends IntentService {
                                 com.android.internal.R.color.system_notification_accent_color));
 
         if (isPlaceholder) {
-            builder.setContentTitle(getString(R.string.saving_trace));
+            builder.setContentTitle(getString(R.string.saving_trace))
+                    .setContentText(getString(R.string.saving_trace));
         } else {
             builder.setContentTitle(getString(R.string.saving_trace))
                     .setTicker(getString(R.string.saving_trace))
@@ -389,7 +391,8 @@ public class TraceService extends IntentService {
 
         // Create and post full saving notification (replaces placeholder with same ID)
         Notification notification = createSavingNotificationBuilder(false).build();
-        startForeground(SAVING_TRACE_NOTIFICATION, notification);
+        startForeground(SAVING_TRACE_NOTIFICATION, notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
 
         // Cancel any existing recording notification
         notificationManager.cancel(TRACE_NOTIFICATION);
