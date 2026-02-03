@@ -92,7 +92,7 @@ public class TraceUtils {
     }
 
     public static TreeMap<String, String> listCategories() {
-        return AtraceUtils.atraceListCategories();
+        return PerfettoUtils.perfettoListCategories();
     }
 
     public static void clearSavedTraces() {

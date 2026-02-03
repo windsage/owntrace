@@ -23,6 +23,12 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
+import perfetto.protos.DataSourceDescriptorOuterClass.DataSourceDescriptor;
+import perfetto.protos.FtraceDescriptorOuterClass.FtraceDescriptor.AtraceCategory;
+import perfetto.protos.TracingServiceStateOuterClass.TracingServiceState;
+import perfetto.protos.TracingServiceStateOuterClass.TracingServiceState.DataSource;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import android.os.Build;
@@ -381,5 +387,114 @@ public class PerfettoUtils implements TraceUtils.TraceEngine {
             LogUtils.e(TAG, "Failed to check perfetto status for " + tag + ": " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 原先AtraceUtils获取categories会有截取，以下方法移植自Traceur PerfettoUtils.java
+     *
+     */
+    public static TreeMap<String, String> perfettoListCategories() {
+        String cmd = "perfetto --query-raw";
+
+        LogUtils.v(TAG, "Listing categories via perfetto --query-raw");
+
+        try {
+            TreeMap<String, String> result = new TreeMap<>();
+
+            Process perfetto = TraceUtils.exec(cmd);
+
+            TracingServiceState serviceState =
+                    TracingServiceState.parseFrom(perfetto.getInputStream());
+
+            if (!perfetto.waitFor(10000, TimeUnit.MILLISECONDS)) {
+                LogUtils.e(TAG, "perfetto --query-raw timed out after 10 seconds");
+                perfetto.destroyForcibly();
+                return getFallbackCategories();
+            }
+
+            if (perfetto.exitValue() != 0) {
+                LogUtils.e(TAG, "perfetto --query-raw failed with exit code: "
+                          + perfetto.exitValue());
+                return getFallbackCategories();
+            }
+
+            // 遍历数据源,查找linux.ftrace
+            List<AtraceCategory> categories = null;
+            for (DataSource dataSource : serviceState.getDataSourcesList()) {
+                DataSourceDescriptor descriptor = dataSource.getDsDescriptor();
+                if ("linux.ftrace".equals(descriptor.getName())){
+                    categories = descriptor.getFtraceDescriptor()
+                            .getAtraceCategoriesList();
+                    LogUtils.d(TAG, "Found linux.ftrace data source");
+                    break;
+                }
+            }
+
+            if (categories != null && !categories.isEmpty()) {
+                for (AtraceCategory category : categories) {
+                    result.put(category.getName(), category.getDescription());
+                }
+                LogUtils.i(TAG, "Successfully loaded " + result.size()
+                          + " categories from perfetto");
+            } else {
+                LogUtils.w(TAG, "No categories found in linux.ftrace data source");
+                return getFallbackCategories();
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            LogUtils.e(TAG, "perfettoListCategories exception: " + e.getMessage());
+            return getFallbackCategories();
+        }
+    }
+
+    // 备用方案:返回硬编码的完整category列表
+    private static TreeMap<String, String> getFallbackCategories() {
+        LogUtils.w(TAG, "Using fallback hardcoded category list");
+
+        TreeMap<String, String> fallback = new TreeMap<>();
+
+        // Userspace categories
+        fallback.put("gfx", "Graphics");
+        fallback.put("input", "Input");
+        fallback.put("view", "View System");
+        fallback.put("webview", "WebView");
+        fallback.put("wm", "Window Manager");
+        fallback.put("am", "Activity Manager");
+        fallback.put("sm", "Sync Manager");
+        fallback.put("audio", "Audio");
+        fallback.put("video", "Video");
+        fallback.put("camera", "Camera");
+        fallback.put("hal", "Hardware Modules");
+        fallback.put("res", "Resource Loading");
+        fallback.put("dalvik", "Dalvik VM");
+        fallback.put("rs", "RenderScript");
+        fallback.put("bionic", "Bionic C Library");
+        fallback.put("power", "Power Management");
+        fallback.put("pm", "Package Manager");
+        fallback.put("ss", "System Server");
+        fallback.put("database", "Database");
+        fallback.put("network", "Network");
+        fallback.put("adb", "ADB");
+        fallback.put("vibrator", "Vibrator");
+        fallback.put("aidl", "AIDL calls");
+        fallback.put("nnapi", "NNAPI");
+        fallback.put("rro", "Runtime Resource Overlay");
+
+        fallback.put("sched", "CPU Scheduling");
+        fallback.put("irq", "IRQ Events");
+        fallback.put("i2c", "I2C Events");
+        fallback.put("freq", "CPU Frequency");
+        fallback.put("idle", "CPU Idle");
+        fallback.put("disk", "Disk I/O");
+        fallback.put("sync", "Synchronization");
+        fallback.put("workq", "Kernel Workqueues");
+        fallback.put("memreclaim", "Kernel Memory Reclaim");
+        fallback.put("binder_driver", "Binder Kernel driver");
+        fallback.put("binder_lock", "Binder global lock trace");
+        fallback.put("memory", "Memory");
+
+        return fallback;
     }
 }

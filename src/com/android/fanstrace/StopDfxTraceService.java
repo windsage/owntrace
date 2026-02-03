@@ -16,6 +16,7 @@
 
 package com.android.fanstrace;
 
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -35,7 +36,6 @@ public class StopDfxTraceService extends TraceService {
      */
     @Override
     public void onHandleIntent(Intent intent) {
-        ensureForegroundStarted(NotificationType.TRACE_SAVING);
         Context context = getApplicationContext();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         // If the user thinks tracing is off and the trace processor agrees, we have no work to do.
@@ -45,7 +45,7 @@ public class StopDfxTraceService extends TraceService {
 
             // 重置preference
             prefs.edit().putBoolean(context.getString(R.string.pref_key_dfx_tracing_on), false).commit();
-            cleanupPlaceholderNotification(NotificationType.TRACE_SAVING);
+            stopForeground(Service.STOP_FOREGROUND_REMOVE);
             return;
         }
 

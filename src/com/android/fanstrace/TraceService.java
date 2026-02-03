@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import android.app.IntentService;
+import android.app.NotificationChannel;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -73,6 +74,15 @@ public class TraceService extends IntentService {
         TRACE_SAVING      // For Stop services - use SAVING_TRACE_NOTIFICATION (ID=2)
     }
 
+    /**
+     * CRITICAL: Start foreground service immediately in onCreate() to satisfy Android requirement.
+     */
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        ensureNotificationChannelsCreated();
+        startForegroundWithGenericNotification();
+    }
     /**
      * Check if FANS trace should auto-start based on device RAM
      * @param context Application context
@@ -243,68 +253,11 @@ public class TraceService extends IntentService {
         } else {
             builder.setContentTitle(getString(R.string.saving_trace))
                     .setTicker(getString(R.string.saving_trace))
+                    .setContentText(getString(R.string.saving_trace))
                     .setProgress(1, 0, true);  // Indeterminate progress
         }
 
         return builder;
-    }
-
-    /**
-     * Ensure foreground service is started immediately to satisfy Android system requirement.
-     * This method must be called at the very beginning of onHandleIntent() to prevent
-     * ForegroundServiceDidNotStartInTimeException.
-     *
-     * @param type The notification type (TRACE_RECORDING or TRACE_SAVING)
-     */
-    protected void ensureForegroundStarted(NotificationType type) {
-        final int notificationId;
-        final Notification.Builder builder;
-
-        switch (type) {
-        case TRACE_RECORDING:
-            notificationId = TRACE_NOTIFICATION;
-            builder = createRecordingNotificationBuilder(null, true);
-            break;
-        case TRACE_SAVING:
-            notificationId = SAVING_TRACE_NOTIFICATION;
-            builder = createSavingNotificationBuilder(true);
-            break;
-        default:
-            throw new IllegalArgumentException("Unknown notification type: " + type);
-        }
-
-        // Start foreground immediately - satisfies Android system requirement
-        // If child class continues to normal flow, this will be replaced by real notification
-        // If child class returns early, it must call cleanupPlaceholderNotification()
-        startForeground(
-                notificationId, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-    }
-
-    /**
-     * Clean up placeholder notification when returning early without executing normal trace flow.
-     * This method should be called only when shouldStartTrace() or shouldStopTrace() returns false.
-     *
-     * For Stop services: Also cancels any existing trace recording notifications.
-     *
-     * @param type The notification type (must match what was passed to ensureForegroundStarted)
-     */
-    protected void cleanupPlaceholderNotification(NotificationType type) {
-        NotificationManager nm = getSystemService(NotificationManager.class);
-
-        switch (type) {
-        case TRACE_RECORDING:
-            nm.cancel(TRACE_NOTIFICATION);
-            break;
-        case TRACE_SAVING:
-            nm.cancel(SAVING_TRACE_NOTIFICATION);
-            nm.cancel(TRACE_NOTIFICATION);
-            break;
-        default:
-            break;
-        }
-
-        // Remove foreground service status
-        stopForeground(Service.STOP_FOREGROUND_REMOVE);
     }
 
     @Override
@@ -418,5 +371,52 @@ public class TraceService extends IntentService {
 
         // Cleanup old files
         TraceUtils.cleanupOlderFiles(MIN_KEEP_COUNT, MIN_KEEP_AGE);
+    }
+
+    /**
+     * Ensure notification channels are created before calling startForeground.
+     */
+    private void ensureNotificationChannelsCreated() {
+        NotificationManager nm = getSystemService(NotificationManager.class);
+
+        // Create TRACING channel if not exists
+        if (nm.getNotificationChannel(Receiver.NOTIFICATION_CHANNEL_TRACING) == null) {
+            NotificationChannel tracingChannel = new NotificationChannel(
+                    Receiver.NOTIFICATION_CHANNEL_TRACING,
+                    getString(R.string.trace_is_being_recorded),
+                    NotificationManager.IMPORTANCE_HIGH);
+            tracingChannel.setBypassDnd(true);
+            tracingChannel.enableVibration(false);
+            tracingChannel.setSound(null, null);
+            nm.createNotificationChannel(tracingChannel);
+        }
+
+        // Create OTHER channel if not exists
+        if (nm.getNotificationChannel(Receiver.NOTIFICATION_CHANNEL_OTHER) == null) {
+            NotificationChannel saveTraceChannel = new NotificationChannel(
+                    Receiver.NOTIFICATION_CHANNEL_OTHER,
+                    getString(R.string.saving_trace),
+                    NotificationManager.IMPORTANCE_HIGH);
+            saveTraceChannel.setBypassDnd(true);
+            saveTraceChannel.enableVibration(false);
+            saveTraceChannel.setSound(null, null);
+            nm.createNotificationChannel(saveTraceChannel);
+        }
+    }
+
+    /**
+     * Start foreground with generic notification immediately to satisfy system requirement.
+     */
+    private void startForegroundWithGenericNotification() {
+        Notification notification = new Notification.Builder(this, Receiver.NOTIFICATION_CHANNEL_TRACING)
+                .setSmallIcon(R.drawable.bugfood_icon)
+                .setContentTitle(getString(R.string.trace_is_being_recorded))
+                .setContentText(getString(R.string.stop_tracing))
+                .setLocalOnly(true)
+                .setColor(getColor(com.android.internal.R.color.system_notification_accent_color))
+                .build();
+
+        startForeground(TRACE_NOTIFICATION, notification,
+                       ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
     }
 }

@@ -67,19 +67,20 @@ public class Receiver extends BroadcastReceiver {
 
         LogUtils.i(TAG, "onReceive action =" + intent.getAction());
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
-            long bootTime = SystemClock.elapsedRealtime();
-            long currentUptime = SystemClock.uptimeMillis();
+            long elapsedRealtime = SystemClock.elapsedRealtime();
+            long uptimeMillis = SystemClock.uptimeMillis();
+            long currentTimeMillis = System.currentTimeMillis();
 
-            LogUtils.i(TAG, "BOOT_COMPLETED received - bootTime: " + bootTime +
-                       ", uptime: " + currentUptime);
+            LogUtils.i(TAG, "BOOT_COMPLETED received - elapsed: " + elapsedRealtime +
+                       "ms, uptime: " + uptimeMillis + "ms, realTime: " + currentTimeMillis);
 
-            // important: 不知何故会在异常重启后收到开机广播
-            // 如果系统运行时间很长,说明这不是真正的开机
-            if (bootTime > 60000) {
-                LogUtils.w(TAG, "BOOT_COMPLETED received but system uptime is " +
-                           bootTime + "ms, ignoring as false boot signal");
-                return;  // 忽略这个虚假的开机广播
+            // Multi-dimensional time check to distinguish real boot from false broadcast
+            if (!isRealBootBroadcast(context, elapsedRealtime, uptimeMillis, currentTimeMillis)) {
+                LogUtils.w(TAG, "BOOT_COMPLETED is a false signal (force-stop triggered), ignoring");
+                return;
             }
+
+            LogUtils.i(TAG, "BOOT_COMPLETED verified as real boot signal, proceeding with trace startup");
             if (TraceService.BOOT_START) {
                 createNotificationChannels(context);
 
@@ -210,5 +211,85 @@ public class Receiver extends BroadcastReceiver {
         }
 
         return mDefaultTagList;
+    }
+
+    /**
+     * Detect whether this is a real boot broadcast or a false broadcast triggered by force-stop.
+     * Uses multi-dimensional time analysis to make accurate judgment.
+     *
+     * @param context Application context
+     * @param elapsedRealtime System elapsed time including sleep (from SystemClock.elapsedRealtime())
+     * @param uptimeMillis System uptime excluding sleep (from SystemClock.uptimeMillis())
+     * @param currentTimeMillis Current real time (from System.currentTimeMillis())
+     * @return true if this is a real boot broadcast, false if it's a false signal
+     */
+    private boolean isRealBootBroadcast(Context context, long elapsedRealtime,
+                                         long uptimeMillis, long currentTimeMillis) {
+        final long EARLY_BOOT_THRESHOLD = 120000;  // 120 seconds - boot broadcast may arrive 60-120s after boot
+        final long EXTENDED_BOOT_THRESHOLD = 300000;  // 300 seconds - extended window for slow boots
+        final long SLEEP_TIME_THRESHOLD = 10000;  // 10 seconds - max acceptable sleep time during early boot
+        final long FALSE_BROADCAST_INTERVAL = 60000;  // 60 seconds - force-stop broadcasts arrive within this window
+        final long REAL_TIME_JUMP_THRESHOLD = 3600000;  // 1 hour - real time jump indicating false broadcast
+
+        LogUtils.d(TAG, "Boot detection - elapsed: " + elapsedRealtime + "ms, uptime: " + uptimeMillis +
+                   "ms, sleepTime: " + (elapsedRealtime - uptimeMillis) + "ms");
+
+        if (elapsedRealtime < EARLY_BOOT_THRESHOLD && uptimeMillis < EARLY_BOOT_THRESHOLD) {
+            LogUtils.i(TAG, "Boot detection: REAL BOOT - system recently started (dimension 1)");
+            updateBootTimestamp(context, elapsedRealtime, currentTimeMillis);
+            return true;
+        }
+
+        long sleepTime = elapsedRealtime - uptimeMillis;
+        if (elapsedRealtime < EXTENDED_BOOT_THRESHOLD && sleepTime < SLEEP_TIME_THRESHOLD) {
+            LogUtils.i(TAG, "Boot detection: REAL BOOT - minimal sleep time during boot window (dimension 2)");
+            updateBootTimestamp(context, elapsedRealtime, currentTimeMillis);
+            return true;
+        }
+
+        SharedPreferences prefs = context.getSharedPreferences("fanstrace_boot_detector", Context.MODE_PRIVATE);
+        long lastBootElapsed = prefs.getLong("last_boot_elapsed", 0);
+        long lastBootRealTime = prefs.getLong("last_boot_real_time", 0);
+
+        LogUtils.d(TAG, "Boot detection - last: elapsed=" + lastBootElapsed + "ms, realTime=" + lastBootRealTime);
+
+        if (lastBootElapsed > elapsedRealtime) {
+            LogUtils.i(TAG, "Boot detection: REAL BOOT - elapsed time reset detected (dimension 3)");
+            updateBootTimestamp(context, elapsedRealtime, currentTimeMillis);
+            return true;
+        }
+
+        if (lastBootElapsed > 0) {
+            long realTimeDiff = Math.abs(currentTimeMillis - lastBootRealTime);
+            long elapsedDiff = Math.abs(elapsedRealtime - lastBootElapsed);
+
+            LogUtils.d(TAG, "Boot detection - diffs: realTime=" + realTimeDiff + "ms, elapsed=" + elapsedDiff + "ms");
+
+            if (realTimeDiff > REAL_TIME_JUMP_THRESHOLD && elapsedDiff < FALSE_BROADCAST_INTERVAL) {
+                LogUtils.w(TAG, "Boot detection: FALSE BOOT - force-stop pattern detected (dimension 4)");
+                return false;
+            }
+        }
+
+        LogUtils.i(TAG, "Boot detection: REAL BOOT - default conservative judgment (dimension 5)");
+        updateBootTimestamp(context, elapsedRealtime, currentTimeMillis);
+        return true;
+    }
+
+    /**
+     * Update boot timestamp records for next detection cycle.
+     *
+     * @param context Application context
+     * @param elapsedRealtime Current elapsed realtime
+     * @param currentTimeMillis Current real time
+     */
+    private void updateBootTimestamp(Context context, long elapsedRealtime, long currentTimeMillis) {
+        SharedPreferences prefs = context.getSharedPreferences("fanstrace_boot_detector", Context.MODE_PRIVATE);
+        prefs.edit()
+            .putLong("last_boot_elapsed", elapsedRealtime)
+            .putLong("last_boot_real_time", currentTimeMillis)
+            .apply();
+
+        LogUtils.d(TAG, "Boot timestamp updated - elapsed: " + elapsedRealtime + "ms, realTime: " + currentTimeMillis);
     }
 }
